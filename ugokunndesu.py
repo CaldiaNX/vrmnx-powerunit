@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-VRMNX うごくんです
+うごくんですNX
 """
 __author__ = "Caldia"
 __status__ = "production"
