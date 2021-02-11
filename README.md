@@ -1,7 +1,7 @@
 # うごくんですNX
 
 ## 概要
-「うごくんですNX」は「[鉄道模型シミュレーターNX](http://www.imagic.co.jp/hobby/products/vrmnx/ "鉄道模型シミュレーターNX")」（VRMNX）で利用する、ImGuiから複数の編成とポイントを操作できる便利ツールです。  
+「うごくんですNX」は「[鉄道模型シミュレーターNX](http://www.imagic.co.jp/hobby/products/vrmnx/ "鉄道模型シミュレーターNX")」（VRMNX）で複数の編成とポイントを操作できるImGuiウィンドウです。  
 
 ## ダウンロード
 - [ugokunndesu.py](https://raw.githubusercontent.com/CaldiaNX/vrmnx-ugokunndesu/main/ugokunndesu.py)
