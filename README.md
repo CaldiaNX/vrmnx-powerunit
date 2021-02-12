@@ -1,7 +1,7 @@
-# うごくんですNX
+# パワーユニットくん
 
 ## 概要
-「うごくんですNX」は「[鉄道模型シミュレーターNX](http://www.imagic.co.jp/hobby/products/vrmnx/ "鉄道模型シミュレーターNX")」（VRMNX）で複数の編成とポイントを操作できるImGuiウィンドウです。  
+「パワーユニットくん」は「[鉄道模型シミュレーターNX](http://www.imagic.co.jp/hobby/products/vrmnx/ "鉄道模型シミュレーターNX")」（VRMNX）で複数の編成とポイントを操作できるImGuiウィンドウです。  
 
 ## ダウンロード
 - [ugokunndesu.py](https://raw.githubusercontent.com/CaldiaNX/vrmnx-ugokunndesu/main/ugokunndesu.py)
@@ -20,7 +20,7 @@ C:\VRMNX（一例）
 
 ```py
 import vrmapi
-import ugokunndesu # ★「うごくんです」をインポート
+import ugokunndesu # ★インポート
 
 def vrmevent(obj,ev,param):
     if ev == 'init':
@@ -67,12 +67,16 @@ load ugokunndesu.py
 - 「列車名」ボタン
   - 押すと該当編成がアクティブ（[SetView](https://vrmcloud.net/nx/script/script/train/SetView.html)）になります。
   - 表示名称は半角20文字で設定していますが、全角半角が混じる場合、ボタンサイズにずれが生じます。
-- 「向」ボタン
+- 「反」ボタン
   - 押すと列車の向きを反転（[Turn](https://vrmcloud.net/nx/script/script/train/Turn.html)）します。
 - 「電圧」スライドバー
   - 動かすと列車の速度（電圧）を変更（[SetVoltage](https://vrmcloud.net/nx/script/script/train/SetVoltage.html)）します。
-- 「灯」チェックボックス
-  - 電装系のON/OFFを切り替えます。
+- 「点灯」チェックボックス
+  - 前頭・尾灯・LED・方向幕・パンタグラフ・発煙のON/OFFを切り替えます。
+- 「室内」チェックボックス
+  - 運転席点灯・室内灯のON/OFFを切り替えます。
+- 「音」チェックボックス
+  - 音のON/OFFを切り替えます。
 - 「笛」ボタン
   - 押すと列車の警笛（[PlayHorn](https://vrmcloud.net/nx/script/script/train/PlayHorn.html)）を鳴らします。
 
@@ -98,4 +102,11 @@ elif ev == 'catch':
 
 ## 履歴
 - 2021/02/12 v1.0
-  - 公開
+  - αテスト
+- 2021/02/13 v1.1
+  - 名前変更
+  - 電圧の隣にkm/h速度を併記。
+  - スライドバーに速度をリアルタイム反映。
+  - 編成ボタンにSetActiveを追加。
+  - 電灯と音スイッチを3種に分離。
+  - ポイントの表示順を変更(ポイント名称での表示ずれを抑えるため)

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-うごくんですNX
+パワーユニットくん
 """
 __author__ = "Caldia"
 __status__ = "production"
-__version__ = "1.0"
-__date__    = "2021/02/12"
+__version__ = "1.1"
+__date__    = "2021/02/13"
 
 import vrmapi
 
@@ -39,8 +39,11 @@ def init():
 # 編成オブジェクト内に表示用タグ作成
 def setImGuiTrainParam(tr):
     di = tr.GetDict()
-    di['ugoku_vol'] = [tr.GetVoltage()]
-    di['ugoku_sw'] = [0]
+    di['ugoku_ch1'] = [0]
+    di['ugoku_ch2'] = [0]
+    di['ugoku_ch3'] = [0]
+    # 固定サイズの編成名を初期生成
+    di['ugoku_name'] = tr.GetNAME().ljust(18)
     # センサー情報を入れるとウィンドウに表示
     di['ugoku_ats'] = ''
 
@@ -49,11 +52,11 @@ def setImGuiPointParam(pt):
     di = pt.GetDict()
     di['ugoku_r'] = [pt.GetBranch()]
 
-# ウィンドウを描画
+# ウィンドウを描画(内部処理コストを抑える)
 def drawFrame():
     # ImGui定義
     gui = vrmapi.ImGui()
-    gui.Begin("ugoku","うごくんです")
+    gui.Begin("ugoku","パワーユニットくん")
     # 編成リストを新規編成リストに格納
     tList = vrmapi.LAYOUT().GetTrainList()
     # 編成一覧を参照
@@ -76,70 +79,86 @@ def imguiMakeTrain(gui, tr):
     # 編成内のパラメータを取得
     di = tr.GetDict()
 
-    # 編成名ボタン(20文字)
-    if gui.Button("bt1" + str(tr.GetID()), tr.GetNAME().ljust(20)):
-        # 編成操作視点
+    # 編成名ボタン
+    if gui.Button("bt1" + str(tr.GetID()), di['ugoku_name']):
+        # 編成操作（アクティブ化）
         vrmapi.LOG(tr.GetNAME() + ".SetView")
+        tr.SetActive()
         tr.SetView()
     gui.SameLine()
 
-    # 電圧変数取得
-    vlary = di['ugoku_vol']
-    # 前後ボタン
-    if gui.Button('bt3' + str(tr.GetID()), "向"):
-        # 方向転換実行
+    # 反転ボタン
+    # 電圧取得
+    vlary = [tr.GetVoltage()]
+    if gui.Button('bt2' + str(tr.GetID()), "反"):
+        # 方向転換
         vrmapi.LOG(tr.GetNAME() + ".Turn")
         tr.Turn()
-        # 速度スライドバーを0で再描画
-        vlary[0] = 0.0
-        gui.SliderFloat('vl' + str(tr.GetID()), '', vlary, 0, 1.0)
     gui.SameLine()
 
+    # 速度スライドバー
     # スライドバーサイズ調整
     gui.PushItemWidth(100.0)
-    # 速度スライドバー
     if gui.SliderFloat('vl' + str(tr.GetID()), '', vlary, 0, 1.0):
-        vrmapi.LOG(tr.GetNAME() + ".SetVoltage " + str(round(vlary[0], 2)))
         # 電圧反映
+        vrmapi.LOG(tr.GetNAME() + ".SetVoltage " + str(round(vlary[0], 2)))
         tr.SetVoltage(vlary[0])
     # サイズリセット
     gui.PopItemWidth()
     gui.SameLine()
     # 速度小数点1桁丸めkm/h表示
-    #gui.Text(str(round(tra.GetSpeed(), 1)) + 'km/h')
+    gui.Text((str(round(tr.GetSpeed(), 1)) + 'km/h').rjust(9))
+    gui.SameLine()
 
-    # 点灯変数取得
-    swary = di['ugoku_sw']
+    # ヘッドライト・テールライト・字幕・煙・LED
+    gui.Text(" 点灯")
+    gui.SameLine()
+    swary = di['ugoku_ch1']
     # 点灯ボタン
-    if gui.Checkbox("ch1" + str(tr.GetID()), "灯", swary):
+    if gui.Checkbox("ch1" + str(tr.GetID()), "", swary):
+        vrmapi.LOG(tr.GetNAME() + ".setPower1 " + str(swary[0]))
+        setPower1(tr, swary[0])
+    gui.SameLine()
+
+    # 運転席・室内灯
+    gui.Text(" 室内")
+    gui.SameLine()
+    swary = di['ugoku_ch2']
+    # 室内ボタン
+    if gui.Checkbox("ch2" + str(tr.GetID()), "", swary):
+        vrmapi.LOG(tr.GetNAME() + ".setPower2 " + str(swary[0]))
+        setPower2(tr, swary[0])
+    gui.SameLine()
+
+    # サウンド
+    gui.Text(" 音")
+    gui.SameLine()
+    swary = di['ugoku_ch3']
+    # 音ボタン
+    if gui.Checkbox("ch3" + str(tr.GetID()), "", swary):
         # 点灯操作
-        vrmapi.LOG(tr.GetNAME() + ".setPower " + str(swary[0]))
-        setPower(tr, swary[0])
+        vrmapi.LOG(tr.GetNAME() + ".setPower3 " + str(swary[0]))
+        setPower3(tr, swary[0])
     gui.SameLine()
 
     # 警笛ボタン
     if gui.Button('bt2' + str(tr.GetID()), "笛"):
-        # 警笛実行
+        # 警笛
         vrmapi.LOG(tr.GetNAME() + ".PlayHorn")
         tr.PlayHorn(0)
     gui.SameLine()
 
-    # センサー位置を表示
+    # 位置情報を表示
     gui.Text(di['ugoku_ats'])
 
 # ポイントリストを作成します
 def imguiMakePoint(gui, pt):
-
+    # 編成内のパラメータを取得
     di = pt.GetDict()
-    # 名前表示(20文字)
-    gui.Text(pt.GetNAME().ljust(20))
-    gui.SameLine()
-
-    # ラベル
-    gui.Text("直/曲")
-    gui.SameLine()
 
     # 直進用ラジオボタン
+    gui.Text("直/曲")
+    gui.SameLine()
     if gui.RadioButton('p0' + str(pt.GetID()), '', di['ugoku_r'], 0):
         pt.SetBranch(0)
         vrmapi.LOG(pt.GetNAME() + ".SetBranch 0")
@@ -149,16 +168,13 @@ def imguiMakePoint(gui, pt):
     if gui.RadioButton('p1' + str(pt.GetID()), '', di['ugoku_r'], 1):
         pt.SetBranch(1)
         vrmapi.LOG(pt.GetNAME() + ".SetBranch 1")
+    gui.SameLine()
 
-# 指定編成の車両電装を制御
-def setPower(tr, sw):
-    # サウンド変更
-    if sw == 0:
-        # 再生停止
-        tr.SetSoundPlayMode(0)
-    else:
-        # 常時再生
-        tr.SetSoundPlayMode(2)
+    # 名前表示
+    gui.Text(pt.GetNAME())
+
+# 指定編成の点灯を制御
+def setPower1(tr, sw):
     #車両数を取得
     len = tr.GetNumberOfCars()
     #車両ごとに処理
@@ -171,12 +187,8 @@ def setPower(tr, sw):
             car = tr.GetCar(i)
             # 方向幕
             car.SetRollsignLight(sw)
-            # 室内灯
-            car.SetRoomlight(sw)
             # LED
             car.SetLEDLight(sw)
-            # 運転台室内灯
-            car.SetCabLight(sw)
             # パンダグラフ個数確認
             for j in range(0, car.GetCountOfPantograph()):
                 # パンタグラフ
@@ -189,9 +201,34 @@ def setPower(tr, sw):
             #if i == len - 1:
             # テールライト
             car.SetTaillight(sw)
-            # 運転台室内灯
-            car.SetCabLight(sw)
             # 蒸気機関車用（テンダーも対象）
             if car.GetCarType() == 1:
                 # 煙
                 car.SetSmoke(sw)
+
+# 指定編成の車内灯を制御
+def setPower2(tr, sw):
+    #車両数を取得
+    len = tr.GetNumberOfCars()
+    #車両ごとに処理
+    for i in range(0, len):
+        #ダミーは対象外
+        if tr.GetDummyMode():
+            vrmapi.LOG(tr.GetNAME() + " ダミースキップ")
+        else:
+            # 車両を取得
+            car = tr.GetCar(i)
+            # 室内灯
+            car.SetRoomlight(sw)
+            # 運転台室内灯
+            car.SetCabLight(sw)
+
+# 指定編成の音を制御
+def setPower3(tr, sw):
+    # サウンド変更
+    if sw == 0:
+        # 再生停止
+        tr.SetSoundPlayMode(0)
+    else:
+        # 常時再生
+        tr.SetSoundPlayMode(2)
