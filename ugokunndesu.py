@@ -43,7 +43,7 @@ def setImGuiTrainParam(tr):
     di['ugoku_ch2'] = [0]
     di['ugoku_ch3'] = [0]
     # 固定サイズの編成名を初期生成
-    di['ugoku_name'] = tr.GetNAME().ljust(18)
+    di['ugoku_name'] = tr.GetNAME().ljust(16)
     # センサー情報を入れるとウィンドウに表示
     di['ugoku_ats'] = ''
 
@@ -131,7 +131,7 @@ def imguiMakeTrain(gui, tr):
     gui.SameLine()
 
     # サウンド
-    gui.Text(" 音")
+    gui.Text(" 音源")
     gui.SameLine()
     swary = di['ugoku_ch3']
     # 音ボタン
@@ -142,7 +142,7 @@ def imguiMakeTrain(gui, tr):
     gui.SameLine()
 
     # 警笛ボタン
-    if gui.Button('bt2' + str(tr.GetID()), "笛"):
+    if gui.Button('bt3' + str(tr.GetID()), "警笛"):
         # 警笛
         vrmapi.LOG(tr.GetNAME() + ".PlayHorn")
         tr.PlayHorn(0)
@@ -179,32 +179,28 @@ def setPower1(tr, sw):
     len = tr.GetNumberOfCars()
     #車両ごとに処理
     for i in range(0, len):
-        #ダミーは対象外
-        if tr.GetDummyMode():
-            vrmapi.LOG(tr.GetNAME() + " ダミースキップ")
-        else:
-            # 車両を取得
-            car = tr.GetCar(i)
-            # 方向幕
-            car.SetRollsignLight(sw)
-            # LED
-            car.SetLEDLight(sw)
-            # パンダグラフ個数確認
-            for j in range(0, car.GetCountOfPantograph()):
-                # パンタグラフ
-                car.SetPantograph(j,sw)
-            # 先頭車両処理(ifを外して中間連結車も含む)
-            #if i == 0:
-            # ヘッドライト
-            car.SetHeadlight(sw)
-            # 最後尾車両処理(ifを外して中間連結車も含む)
-            #if i == len - 1:
-            # テールライト
-            car.SetTaillight(sw)
-            # 蒸気機関車用（テンダーも対象）
-            if car.GetCarType() == 1:
-                # 煙
-                car.SetSmoke(sw)
+        # 車両を取得
+        car = tr.GetCar(i)
+        # 方向幕
+        car.SetRollsignLight(sw)
+        # LED
+        car.SetLEDLight(sw)
+        # パンダグラフ個数確認
+        for j in range(0, car.GetCountOfPantograph()):
+            # パンタグラフ
+            car.SetPantograph(j,sw)
+        # 先頭車両処理(ifを外して中間連結車も含む)
+        #if i == 0:
+        # ヘッドライト
+        car.SetHeadlight(sw)
+        # 最後尾車両処理(ifを外して中間連結車も含む)
+        #if i == len - 1:
+        # テールライト
+        car.SetTaillight(sw)
+        # 蒸気機関車用（テンダーも対象）
+        if car.GetCarType() == 1:
+            # 煙
+            car.SetSmoke(sw)
 
 # 指定編成の車内灯を制御
 def setPower2(tr, sw):
@@ -212,16 +208,12 @@ def setPower2(tr, sw):
     len = tr.GetNumberOfCars()
     #車両ごとに処理
     for i in range(0, len):
-        #ダミーは対象外
-        if tr.GetDummyMode():
-            vrmapi.LOG(tr.GetNAME() + " ダミースキップ")
-        else:
-            # 車両を取得
-            car = tr.GetCar(i)
-            # 室内灯
-            car.SetRoomlight(sw)
-            # 運転台室内灯
-            car.SetCabLight(sw)
+        # 車両を取得
+        car = tr.GetCar(i)
+        # 室内灯
+        car.SetRoomlight(sw)
+        # 運転台室内灯
+        car.SetCabLight(sw)
 
 # 指定編成の音を制御
 def setPower3(tr, sw):
