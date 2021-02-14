@@ -1,18 +1,18 @@
 # パワーユニットくん
 
 ## 概要
-「パワーユニットくん」は「[鉄道模型シミュレーターNX](http://www.imagic.co.jp/hobby/products/vrmnx/ "鉄道模型シミュレーターNX")」（VRMNX）で複数の編成とポイントを操作できるImGuiウィンドウです。  
+「パワーユニットくん」は「[鉄道模型シミュレーターNX](http://www.imagic.co.jp/hobby/products/vrmnx/ "鉄道模型シミュレーターNX")」（VRMNX）で複数の編成とポイントを操作するためのImGuiウィンドウです。  
 
 ## ダウンロード
-- [ugokunndesu.py](https://raw.githubusercontent.com/CaldiaNX/vrmnx-ugokunndesu/main/ugokunndesu.py)
+- [powerunit.py](https://raw.githubusercontent.com/CaldiaNX/vrmnx-ugokunndesu/main/powerunit.py)
 
 ## 利用方法
-レイアウトファイルと同じフォルダ階層に「ugokunndesu.py」ファイルを配置します。  
+レイアウトファイルと同じフォルダ階層に「powerunit.py」ファイルを配置します。  
 
 フォルダ構成：
 ```
 C:\VRMNX（一例）
-├ ugokunndesu.py
+├ powerunit.py
 └ VRMNXレイアウトファイル.vrmnx
 ```
 
@@ -20,15 +20,12 @@ C:\VRMNX（一例）
 
 ```py
 import vrmapi
-import ugokunndesu # ★インポート
+import powerunit # ★インポート
 
 def vrmevent(obj,ev,param):
+    powerunit.vrmevent(obj,ev,param) # ★メイン処理
     if ev == 'init':
         dummy = 1
-        # ★表示用初期設定
-        ugokunndesu.init()
-        # ★UID=101でフレームイベントを定義
-        obj.SetEventFrame(101)
     elif ev == 'broadcast':
         dummy = 1
     elif ev == 'timer':
@@ -38,10 +35,7 @@ def vrmevent(obj,ev,param):
     elif ev == 'after':
         dummy = 1
     elif ev == 'frame':
-        # ★UID=101で実行
-        if param['eventUID'] == 101:
-            # ★フレーム毎描画
-            ugokunndesu.drawFrame()
+        dummy = 1
     elif ev == 'keydown':
         dummy = 1
 ```
@@ -49,36 +43,55 @@ def vrmevent(obj,ev,param):
 ファイル読み込みに成功すると、ビューワー起動時のスクリプトログに
 
 ```
-load ugokunndesu.py
+load powerunit.py
 ```
 
-が表示されます。   
+が表示されます。
+
 ビュワー起動時に列車とポイントの初期設定を行います。  
 下記編成とポイントは操作対象外としてスキップされます。
 
 - ダミー編成
-- 頭文字に「dummy」と付くポイント
+- 頭文字に「dummy」が付くポイント
 
 ## 操作説明
 
-![ugokunndesu](https://user-images.githubusercontent.com/66538961/107662867-110c1780-6cce-11eb-8340-45b4c4fadf5a.png)
+![pwkunn1](https://user-images.githubusercontent.com/66538961/107873390-9ae9f980-6ef5-11eb-8830-416747b6ace9.png)
 
 ### 編成リスト
-- 「列車名」ボタン
-  - 押すと該当編成がアクティブ（[SetView](https://vrmcloud.net/nx/script/script/train/SetView.html)）になります。
-  - 表示名称は半角20文字で設定していますが、全角半角が混じる場合、ボタンサイズにずれが生じます。
+- 「編成名」ボタン
+  - 押すと編成が[アクティブ](https://vrmcloud.net/nx/script/script/train/SetActive.html)になります。
+  - 車両リストの制御対象となります。
+  - 表示名称に全角半角が混じる場合はボタンサイズにずれが生じます。
 - 「反」ボタン
-  - 押すと列車の向きを反転（[Turn](https://vrmcloud.net/nx/script/script/train/Turn.html)）します。
+  - 押すと編成の[進行方向を反転](https://vrmcloud.net/nx/script/script/train/Turn.html)します。
 - 「電圧」スライドバー
-  - 動かすと列車の速度（電圧）を変更（[SetVoltage](https://vrmcloud.net/nx/script/script/train/SetVoltage.html)）します。
-- 「点灯」チェックボックス
-  - 前頭・尾灯・LED・方向幕・パンタグラフ・発煙のON/OFFを切り替えます。
-- 「室内」チェックボックス
-  - 運転席点灯・室内灯のON/OFFを切り替えます。
+  - 動かすと編成の[速度(電圧)を変更](https://vrmcloud.net/nx/script/script/train/SetVoltage.html)します。
+- 「全灯」チェックボックス
+  - 電装系のON/OFFを一括で切り替えます。
 - 「音」チェックボックス
   - 音のON/OFFを切り替えます。
 - 「笛」ボタン
-  - 押すと列車の警笛（[PlayHorn](https://vrmcloud.net/nx/script/script/train/PlayHorn.html)）を鳴らします。
+  - 列車の[警笛](https://vrmcloud.net/nx/script/script/train/PlayHorn.html)を鳴らします。
+
+### 車両リスト
+「編成名ボタン」で選択した編成の車両設定を個別に設定できます。
+
+|列|略称|操作対象|関連関数|備考|
+|--|----|--------|--------|----|
+| 1|－|号車        |[GetCarNumber](https://vrmcloud.net/nx/script/script/car/GetCarNumber.html)|－|
+| 2|HL|ヘッドライト|[GetHeadlight](https://vrmcloud.net/nx/script/script/car/GetHeadlight.html) / [SetHeadlight](https://vrmcloud.net/nx/script/script/car/SetHeadlight.html)|－|
+| 3|TL|テールライト|[GetTaillight](https://vrmcloud.net/nx/script/script/car/GetTaillight.html) / [SetTaillight](https://vrmcloud.net/nx/script/script/car/SetTaillight.html)|－|
+| 4|RS|方向幕      |[GetRollsignLight](https://vrmcloud.net/nx/script/script/car/GetRollsignLight.html) / [SetRollsignLight](https://vrmcloud.net/nx/script/script/car/SetRollsignLight.html)|－|
+| 5|LE|LED         |[GetLEDLight](https://vrmcloud.net/nx/script/script/car/GetLEDLight.html) / [SetLEDLight](https://vrmcloud.net/nx/script/script/car/SetLEDLight.html)|－|
+| 6|RL|ルームライト|[GetRoomlight](https://vrmcloud.net/nx/script/script/car/GetRoomlight.html) / [SetRoomlight](https://vrmcloud.net/nx/script/script/car/SetRoomlight.html)|－|
+| 7|CA|運転台室内灯|[GetCabLight](https://vrmcloud.net/nx/script/script/car/GetCabLight.html) / [SetCabLight](https://vrmcloud.net/nx/script/script/car/SetCabLight.html)|－|
+| 8|SC|入換標識灯  |[GetSCIndicator](https://vrmcloud.net/nx/script/script/car/GetSCIndicator.html) / [SetSCIndicator](https://vrmcloud.net/nx/script/script/car/SetSCIndicator.html)|－|
+| 9|EG|EG灯        |[GetEGIndicator](https://vrmcloud.net/nx/script/script/car/GetEGIndicator.html) / [SetEGIndicator](https://vrmcloud.net/nx/script/script/car/SetEGIndicator.html)|－|
+|10|SM|蒸気機関車煙|[GetSmoke](https://vrmcloud.net/nx/script/script/car/GetSmoke.html) / [SetSmoke](https://vrmcloud.net/nx/script/script/car/SetSmoke.html)|[車輌の種類](https://vrmcloud.net/nx/script/script/car/GetCarType.html)が蒸気機関車(テンダー含む)のみ表示|
+|11|HM|ヘッドマーク|[GetHeadmarkDisp](https://vrmcloud.net/nx/script/script/car/GetHeadmarkDisp.html) / [SetHeadmarkDisp](https://vrmcloud.net/nx/script/script/car/SetHeadmarkDisp.html) / [GetCountOfHeadmark](https://vrmcloud.net/nx/script/script/car/GetCountOfHeadmark.html)|設定のある車両のみ表示|
+|12|PA|パンタグラフ|[GetPantograph](https://vrmcloud.net/nx/script/script/car/GetPantograph.html) / [SetPantograph](https://vrmcloud.net/nx/script/script/car/SetPantograph.html) / [GetCountOfPantograph](https://vrmcloud.net/nx/script/script/car/GetCountOfPantograph.html)|設定のある車両のみ表示|
+|13|OP|オプション  |[GetOptionDisp](https://vrmcloud.net/nx/script/script/car/GetOptionDisp.html) / [SetOptionDisp](https://vrmcloud.net/nx/script/script/car/SetOptionDisp.html)|－|
 
 ### センサー情報表示
 センサーに以下のコードを記載することで、編成リストに文字をリアルタイム表示することが出来ます。
@@ -89,24 +102,28 @@ elif ev == 'catch':
     tr = obj.GetTrain()
     # 列車のDict配列を取得
     di = tr.GetDict()
-    # 「ugoku_ats」キーに文字列を定義
-    di["ugoku_ats"] = obj.GetNAME() + " 通過"
+    # 「pw_ats」キーに文字列を定義
+    di["pw_ats"] = obj.GetNAME() + " 通過"
 ```
-
-表示例：  
-![ugokunndesu_2](https://user-images.githubusercontent.com/66538961/107666651-166b6100-6cd2-11eb-90f5-d53106108c69.png)
 
 ### ポイントリスト
 - 「直/曲」ラジオボタン
-  - 選択するとポイントの分岐方向を変更（[SetBranch](https://vrmcloud.net/nx/script/script/point/SetBranch.html)）します。
+  - 選択するとポイントの[分岐方向を変更](https://vrmcloud.net/nx/script/script/point/SetBranch.html)します。
 
 ## 履歴
-- 2021/02/12 v1.0
-  - αテスト
-- 2021/02/13 v1.1
+- 2021/02/14 v1.0
+  - ファイル名を変更
+  - 呼び出し方法を変更
+  - 車両個別操作に対応
+  - ポイントにIDも追加
+  - その他、多数の処理最適化
+- 2021/02/13 v0.2
+  - β版
   - 名前変更
   - 電圧の隣にkm/h速度を併記。
   - スライドバーに速度をリアルタイム反映。
   - 編成ボタンにSetActiveを追加。
   - 電灯と音スイッチを3種に分離。
   - ポイントの表示順を変更(ポイント名称での表示ずれを抑えるため)
+- 2021/02/12 v0.1
+  - α版
