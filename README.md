@@ -56,7 +56,7 @@ load powerunit.py
 
 ## 操作説明
 
-![pwkunn2](https://user-images.githubusercontent.com/66538961/107875183-c377f080-6f01-11eb-8445-76e4620241c4.png)
+![pwkunn3](https://user-images.githubusercontent.com/66538961/107880394-c4b91580-6f21-11eb-8eec-e33161d51fad.png)
 
 ### 編成リスト
 - 「編成名」ボタン
@@ -71,6 +71,8 @@ load powerunit.py
   - 電装系のON/OFFを一括で切り替えます。
 - 「音」チェックボックス
   - 音のON/OFFを切り替えます。
+- 「扉L」「扉R」チェックボックス
+  - 扉を開閉します。
 - 「笛」ボタン
   - 列車の[警笛](https://vrmcloud.net/nx/script/script/train/PlayHorn.html)を鳴らします。
 
@@ -113,12 +115,17 @@ elif ev == 'catch':
 - 「直/曲」ラジオボタン
   - 選択するとポイントの[分岐方向を変更](https://vrmcloud.net/nx/script/script/point/SetBranch.html)します。
 
+### ウィンドウの非表示
+「P」ボタンを押すとウィンドウの表示/非表示を切り替えできます。  
+初期表示を変える場合は「_drawEnable」のTrue/Falseを変更して下さい。
+
 ## 履歴
 - 2021/02/14 v1.0
   - ファイル名を変更
   - 呼び出し方法を変更
   - 車両個別操作に対応
   - ポイントにIDも追加
+  - 扉の開閉に対応
   - その他、多数の処理最適化
 - 2021/02/13 v0.2 (β版)
   - 名前変更

@@ -13,7 +13,7 @@ import vrmapi
 vrmapi.LOG("load powerunit.py")
 
 # ウィンドウ描画フラグ
-_drawEnable = False
+_drawEnable = True
 # アクティブ編成オブジェクト
 _activeTrainObj = None
 
