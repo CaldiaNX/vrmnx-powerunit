@@ -13,7 +13,7 @@ import vrmapi
 vrmapi.LOG("load powerunit.py")
 
 # ウィンドウ描画フラグ
-_drawEnable = True
+_drawEnable = False
 # アクティブ編成オブジェクト
 _activeTrainObj = None
 
@@ -23,15 +23,15 @@ def vrmevent(obj,ev,param):
     if ev == 'init':
         #vrmapi.LOG("powerunit init")
         init()
-        obj.SetEventFrame(101)
-        obj.SetEventKeyDown('P',102)
+        obj.SetEventFrame()
+        obj.SetEventKeyDown('P')
     elif ev == 'frame':
-        if _drawEnable and param['eventUID'] == 101:
+        if _drawEnable:
             drawFrame()
     elif ev == 'keydown':
         # ウィンドウ描画のON/OFF
         #vrmapi.LOG("ugokunndesu _drawEnable " + str(_drawEnable))
-        if param['eventUID'] == 102:
+        if param['keycode'] == 'P':
             if _drawEnable:
                 _drawEnable = False
             else:
@@ -50,7 +50,8 @@ def init():
             di = tr.GetDict()
             di['pw_ch1'] = [0]
             di['pw_ch2'] = [0]
-            di['pw_ch3'] = [0]
+            di['pw_drl'] = [0]
+            di['pw_drr'] = [0]
             # 固定サイズの編成名を初期生成
             di['pw_name'] = tr.GetNAME().ljust(16)
             # センサー情報を入れるとウィンドウに表示
@@ -160,8 +161,8 @@ def imguiMakeTrain(gui, tr):
     swary = di['pw_ch1']
     # 点灯チェックボックス
     if gui.Checkbox('ch1' + strId, '', swary):
-        setPower1(tr, swary[0])
-        #vrmapi.LOG(tr.GetNAME() + ".setPower1 " + str(swary[0]))
+        setPower(tr, swary[0])
+        #vrmapi.LOG(tr.GetNAME() + ".setPower " + str(swary[0]))
     gui.SameLine()
 
     # サウンド
@@ -170,9 +171,31 @@ def imguiMakeTrain(gui, tr):
     swary = di['pw_ch2']
     # 音チェックボックス
     if gui.Checkbox('ch2' + strId, '', swary):
-        # 点灯操作
-        setPower3(tr, swary[0])
-        #vrmapi.LOG(tr.GetNAME() + ".setPower3 " + str(swary[0]))
+        # 音操作
+        setSound(tr, swary[0])
+        #vrmapi.LOG(tr.GetNAME() + ".setSound " + str(swary[0]))
+    gui.SameLine()
+
+    # 扉L
+    gui.Text(" 扉L")
+    gui.SameLine()
+    swary = di['pw_drl']
+    # 扉Lチェックボックス
+    if gui.Checkbox('dr0' + strId, '', swary):
+        # 扉L操作
+        setDoor(tr, swary[0], 0)
+        #vrmapi.LOG(tr.GetNAME() + ".setDoor " + str(swary[0]))
+    gui.SameLine()
+
+    # 扉R
+    gui.Text(" 扉R")
+    gui.SameLine()
+    swary = di['pw_drr']
+    # 扉Rチェックボックス
+    if gui.Checkbox('dr1' + strId, '', swary):
+        # 扉R操作
+        setDoor(tr, swary[0], 1)
+        #vrmapi.LOG(tr.GetNAME() + ".setDoor " + str(swary[0]))
     gui.SameLine()
 
     # 警笛ボタン
@@ -320,7 +343,7 @@ def imguiMakeCar(gui, car):
 
 
 # 指定編成の点灯を制御
-def setPower1(tr, sw):
+def setPower(tr, sw):
     for car in tr.GetCarList():
         # ヘッドライト
         car.SetHeadlight(sw)
@@ -345,7 +368,7 @@ def setPower1(tr, sw):
 
 
 # 指定編成の音を制御
-def setPower3(tr, sw):
+def setSound(tr, sw):
     # サウンド変更
     if sw == 0:
         # 再生停止
@@ -353,6 +376,16 @@ def setPower3(tr, sw):
     else:
         # 常時再生
         tr.SetSoundPlayMode(2)
+
+
+# ドアの開閉
+def setDoor(tr, sw, lr):
+    for car in tr.GetCarList():
+        # ドア
+        if sw == 0:
+            car.CloseDoor_Side(lr, False)
+        else:
+            car.OpenDoor_Side(lr, False)
 
 
 # ポイントリストを作成します
