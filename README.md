@@ -1,4 +1,4 @@
-# パワーユニットくん
+# VRMNXパワーユニットくん
 
 ## 概要
 「パワーユニットくん」は「[鉄道模型シミュレーターNX](http://www.imagic.co.jp/hobby/products/vrmnx/ "鉄道模型シミュレーターNX")」（VRMNX）で複数の編成とポイントを操作するためのImGuiウィンドウです。  
