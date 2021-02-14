@@ -91,11 +91,10 @@ def drawFrame():
     # アクティブ編成が選択されている
     global _activeTrainObj
     if _activeTrainObj is not None:
-        gui.Text("{0} [{1}]".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID()))
-        # 車両ごとに処理
-        for car in _activeTrainObj.GetCarList():
-            imguiMakeCar(gui, car)
-        if vrmapi.ImGui().TreeNode("pw_help", "ヘルプ"):
+        if vrmapi.ImGui().TreeNode("pwcar", "{0} [{1}]".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID())):
+            # 車両ごとに処理
+            for car in _activeTrainObj.GetCarList():
+                imguiMakeCar(gui, car)
             gui.Text("HL：ヘッドライト　　TL：テールライト　　RS：方向幕　　LE：LED 　　　　　　RL：ルームライト")
             gui.Text("CA：運転台室内灯　　SC：入換標識灯　　　EG：EG灯　　　SM：蒸気機関車煙　　HM：ヘッドマーク")
             gui.Text("PA：パンタグラフ　　OP：オプション")
