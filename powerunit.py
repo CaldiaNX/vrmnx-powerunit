@@ -4,13 +4,13 @@
 """
 __author__ = "Caldia"
 __status__ = "production"
-__version__ = "1.0"
+__version__ = "1.2"
 __date__    = "2021/02/14"
 
 import vrmapi
 
 # ファイル読み込みの確認用
-vrmapi.LOG("load powerunit.py")
+vrmapi.LOG("import パワーユニットくん Ver." + __version__)
 
 # ウィンドウ描画フラグ
 _drawEnable = True
@@ -30,7 +30,7 @@ def vrmevent(obj,ev,param):
             drawFrame()
     elif ev == 'keydown':
         # ウィンドウ描画のON/OFF
-        #vrmapi.LOG("ugokunndesu _drawEnable " + str(_drawEnable))
+        #vrmapi.LOG("powerunit _drawEnable " + str(_drawEnable))
         if param['keycode'] == 'P':
             if _drawEnable:
                 _drawEnable = False
@@ -40,38 +40,55 @@ def vrmevent(obj,ev,param):
 
 # オブジェクト内に変数初期設定
 def init():
-    # 編成リストを新規編成リストに格納
+    # 編成リストを新規リストに格納
     tList = vrmapi.LAYOUT().GetTrainList()
     # 編成リストから編成を繰り返し取得
-    for tr in tList:
-        # ダミー編成は対象外
-        if tr.GetDummyMode() == False:
+    for obj in tList:
+        # ダミー編成以外
+        if obj.GetDummyMode() == False:
             # 編成オブジェクト内に表示用タグ作成
-            di = tr.GetDict()
+            di = obj.GetDict()
             di['pw_ch1'] = [0]
             di['pw_ch2'] = [0]
             di['pw_drl'] = [0]
             di['pw_drr'] = [0]
             # 固定サイズの編成名を初期生成
-            di['pw_name'] = tr.GetNAME().ljust(16)
+            di['pw_name'] = obj.GetNAME().ljust(16)
             # センサー情報を入れるとウィンドウに表示
             di['pw_ats'] = ''
         else:
-            vrmapi.LOG("{0} [{1}] ダミースキップ".format(tr.GetNAME(), tr.GetID()))
+            vrmapi.LOG("{0} [{1}] ダミースキップ".format(obj.GetNAME(), obj.GetID()))
 
-    # ポイントリストを新規ポイントリストに格納
+    # ポイントリストを新規リストに格納
     pList=list()
     vrmapi.LAYOUT().ListPoint(pList)
     # ポイントリストからポイントを繰り返し取得
-    for pt in pList:
+    for obj in pList:
         # 頭文字「dummy」は対象外
-        if pt.GetNAME()[0:5] != 'dummy':
+        if obj.GetNAME()[0:5] != 'dummy':
             # ポイントオブジェクトに表示用タグ作成
-            di = pt.GetDict()
-            di['pw_r'] = [pt.GetBranch()]
+            di = obj.GetDict()
+            # 初期値設定
+            di['pw_r'] = [obj.GetBranch()]
         else:
-            vrmapi.LOG("{0} [{1}] ダミースキップ".format(pt.GetNAME(), pt.GetID()))
+            vrmapi.LOG("{0} [{1}] ダミースキップ".format(obj.GetNAME(), obj.GetID()))
 
+
+    # 信号リストを新規リストに格納
+    sList=list()
+    vrmapi.LAYOUT().ListSignal(sList)
+    # ポイントリストからポイントを繰り返し取得
+    for obj in sList:
+        # 頭文字「dummy」は対象外
+        if obj.GetNAME()[0:5] != 'dummy':
+            # ポイントオブジェクトに表示用タグ作成
+            di = obj.GetDict()
+            # 初期値設定
+            di['pw_s0'] = [obj.GetStat(0)]
+            di['pw_s1'] = [obj.GetStat(1)]
+            #vrmapi.LOG("{0} {1}".format(di['pw_s0'], di['pw_s1']))
+        else:
+            vrmapi.LOG("{0} [{1}] ダミースキップ".format(obj.GetNAME(), obj.GetID()))
 
 # ウィンドウを描画(内部処理コストを抑える)
 def drawFrame():
@@ -79,37 +96,57 @@ def drawFrame():
     gui = vrmapi.ImGui()
     gui.Begin("powerunit","パワーユニットくん")
 
-    # 編成リストを新規編成リストに格納
-    tList = vrmapi.LAYOUT().GetTrainList()
-    # 編成一覧を参照
-    for tr in tList:
-        # ダミー編成以外
-        if tr.GetDummyMode() == False:
-            imguiMakeTrain(gui, tr)
+    if vrmapi.ImGui().TreeNode("pwtrain", "編成リスト"):
+        # 編成リストを新規編成リストに格納
+        tList = vrmapi.LAYOUT().GetTrainList()
+        # 編成一覧を参照
+        for obj in tList:
+            # ダミー編成以外
+            if obj.GetDummyMode() == False:
+                # 車両数が0以上(連結消失で発生)
+                if len(obj.GetCarList()) > 0:
+                    imguiMakeTrain(gui, obj)
+        gui.TreePop()
     gui.Separator()
 
-    # アクティブ編成が選択されている
+    # アクティブ編成が選択されている、かつ0車両以上
     global _activeTrainObj
-    if _activeTrainObj is not None:
+    if _activeTrainObj is not None and len(_activeTrainObj.GetCarList()) > 0:
         if vrmapi.ImGui().TreeNode("pwcar", "{0} [{1}]".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID())):
             # 車両ごとに処理
-            for car in _activeTrainObj.GetCarList():
-                imguiMakeCar(gui, car)
+            for obj in _activeTrainObj.GetCarList():
+                imguiMakeCar(gui, obj)
             gui.Text("HL：ヘッドライト　　TL：テールライト　　RS：方向幕　　LE：LED 　　　　　　RL：ルームライト")
             gui.Text("CA：運転台室内灯　　SC：入換標識灯　　　EG：EG灯　　　SM：蒸気機関車煙　　HM：ヘッドマーク")
-            gui.Text("PA：パンタグラフ　　OP：オプション")
+            gui.Text("PA：パンタグラフ　　OP：オプション      離：切り離し")
             gui.TreePop()
+        gui.Separator()
+
+    if vrmapi.ImGui().TreeNode("pwpoint", "ポイントリスト"):
+        # ポイントリストを取得
+        pList=list()
+        vrmapi.LAYOUT().ListPoint(pList)
+        # ポイント一覧を参照
+        gui.Text(" 直／曲  ポイント名 [ID]")
+        for obj in pList:
+            # ダミーは対象外(名前判断)
+            if obj.GetNAME()[0:5] != 'dummy':
+                imguiMakePoint(gui, obj)
+        gui.TreePop()
     gui.Separator()
 
-    # ポイントリストを取得
-    pList=list()
-    vrmapi.LAYOUT().ListPoint(pList)
-    # ポイント一覧を参照
-    gui.Text(" 直／曲  ポイント名 [ID]")
-    for pt in pList:
-        # ダミーは対象外(名前判断)
-        if pt.GetNAME()[0:5] != 'dummy':
-            imguiMakePoint(gui, pt)
+    if vrmapi.ImGui().TreeNode("pwsignal", "信号リスト"):
+        # ポイントリストを取得
+        sList=list()
+        vrmapi.LAYOUT().ListSignal(sList)
+        # 信号一覧を参照
+        gui.Text(" 信号名 [ID]")
+        for obj in sList:
+            # ダミーは対象外(名前判断)
+            if obj.GetNAME()[0:5] != 'dummy':
+                imguiMakeSignal(gui, obj)
+        gui.TreePop()
+
     gui.End()
 
 
@@ -119,6 +156,18 @@ def imguiMakeTrain(gui, tr):
     strId = str(tr.GetID())
     # 編成内のパラメータを取得
     di = tr.GetDict()
+
+    # 編成名が無ければ新規生成車両とみなす
+    if 'pw_name' not in di.keys():
+        di['pw_ch1'] = [0]
+        di['pw_ch2'] = [0]
+        di['pw_drl'] = [0]
+        di['pw_drr'] = [0]
+        # 固定サイズの編成名を初期生成
+        di['pw_name'] = tr.GetNAME().ljust(16)
+        # センサー情報を入れるとウィンドウに表示
+        di['pw_ats'] = ''
+        vrmapi.LOG("{0} [{1}] が検出されました".format(tr.GetNAME(), strId))
 
     # 編成名ボタン
     if gui.Button("bt1" + strId, di['pw_name']):
@@ -206,6 +255,10 @@ def imguiMakeTrain(gui, tr):
 
     # 位置情報を表示
     gui.Text(di['pw_ats'])
+    gui.SameLine()
+
+    # 名前表示
+    gui.Text("{0} [{1}]".format(tr.GetNAME(), strId))
 
 
 # 車両個別制御表示
@@ -285,6 +338,18 @@ def imguiMakeCar(gui, car):
         #vrmapi.LOG("SetEGIndicator " + str(sw))
     gui.SameLine()
 
+    # 末尾以外かつ2両編成以上
+    tr = car.GetTrain()
+    if car.GetCarPos() != 2 and len(tr.GetCarList()) > 1:
+        gui.Text(" ")
+        gui.SameLine()
+        # 分割ボタン
+        if gui.Button('bc1' + carId, "離"):
+            # 車両を切り離し
+            tr.SplitTrain(car.GetCarNumber())
+            #vrmapi.LOG("SplitTrain " + carId)
+        gui.SameLine()
+
     # 蒸気機関車煙（テンダーも対象）
     if car.GetCarType() == 1:
         gui.Text(" SM")
@@ -345,9 +410,11 @@ def imguiMakeCar(gui, car):
 def setPower(tr, sw):
     for car in tr.GetCarList():
         # ヘッドライト
-        car.SetHeadlight(sw)
+        if car.GetCarPos() == 1:
+            car.SetHeadlight(sw)
         # テールライト
-        car.SetTaillight(sw)
+        if car.GetCarPos() == 2:
+            car.SetTaillight(sw)
         # 方向幕
         car.SetRollsignLight(sw)
         # LED
@@ -408,3 +475,24 @@ def imguiMakePoint(gui, pt):
 
     # 名前表示
     gui.Text("{0} [{1}]".format(pt.GetNAME(), strId))
+
+
+# 信号リストを作成します
+def imguiMakeSignal(gui, sg):
+    # オブジェクトIDを取得
+    strId = str(sg.GetID())
+    # 信号内のパラメータを取得
+    di = sg.GetDict()
+
+    for idx in range(0, 7):
+        #gui.Text(str(idx))
+        #gui.SameLine()
+        sw = 0
+        if di['pw_s0'][0] == [idx]:
+            sw = 1
+        if gui.RadioButton('sg' + str(idx) + strId, '', di['pw_s0'], idx):
+            sg.SetStat(0,idx)
+        gui.SameLine()
+
+    # 名前表示
+    gui.Text("{0} [{1}]".format(sg.GetNAME(), strId))
