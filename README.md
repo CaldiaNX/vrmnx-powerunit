@@ -56,7 +56,7 @@ import パワーユニットくん Ver.1.2
 
 ## 操作説明
 
-![pwkunn3](![pawayuni12](https://user-images.githubusercontent.com/66538961/109386008-1bb7e500-793b-11eb-8f2e-b59e02f9ac4d.png)
+![pwunkn12](https://user-images.githubusercontent.com/66538961/109386008-1bb7e500-793b-11eb-8f2e-b59e02f9ac4d.png)
 
 ### 編成リスト
 - 「編成名」ボタン
