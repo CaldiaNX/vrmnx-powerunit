@@ -4,8 +4,8 @@
 """
 __author__ = "Caldia"
 __status__ = "production"
-__version__ = "1.2"
-__date__    = "2021/02/14"
+__version__ = "1.3"
+__date__    = "2021/02/25"
 
 import vrmapi
 
@@ -112,7 +112,7 @@ def drawFrame():
     # アクティブ編成が選択されている、かつ0車両以上
     global _activeTrainObj
     if _activeTrainObj is not None and len(_activeTrainObj.GetCarList()) > 0:
-        if vrmapi.ImGui().TreeNode("pwcar", "{0} [{1}]".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID())):
+        if vrmapi.ImGui().TreeNode("pwcar", "{0} [{1}] {2}".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID(), _activeTrainObj.GetTrainNumber())):
             # 車両ごとに処理
             for obj in _activeTrainObj.GetCarList():
                 imguiMakeCar(gui, obj)
@@ -258,7 +258,7 @@ def imguiMakeTrain(gui, tr):
     gui.SameLine()
 
     # 名前表示
-    gui.Text("{0} [{1}]".format(tr.GetNAME(), strId))
+    gui.Text(" {0} [{1}] {2}両".format(tr.GetTrainNumber(), strId, str(len(tr.GetCarList()))))
 
 
 # 車両個別制御表示
