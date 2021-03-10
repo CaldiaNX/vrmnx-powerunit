@@ -4,8 +4,8 @@
 """
 __author__ = "Caldia"
 __status__ = "production"
-__version__ = "1.3"
-__date__    = "2021/02/25"
+__version__ = "1.4"
+__date__    = "2021/03/10"
 
 import vrmapi
 
@@ -32,10 +32,7 @@ def vrmevent(obj,ev,param):
         # ウィンドウ描画のON/OFF
         #vrmapi.LOG("powerunit _drawEnable " + str(_drawEnable))
         if param['keycode'] == 'P':
-            if _drawEnable:
-                _drawEnable = False
-            else:
-                _drawEnable = True
+            _drawEnable = not _drawEnable
 
 
 # オブジェクト内に変数初期設定
@@ -116,9 +113,8 @@ def drawFrame():
             # 車両ごとに処理
             for obj in _activeTrainObj.GetCarList():
                 imguiMakeCar(gui, obj)
-            gui.Text("HL：ヘッドライト　　TL：テールライト　　RS：方向幕　　LE：LED 　　　　　　RL：ルームライト")
-            gui.Text("CA：運転台室内灯　　SC：入換標識灯　　　EG：EG灯　　　SM：蒸気機関車煙　　HM：ヘッドマーク")
-            gui.Text("PA：パンタグラフ　　OP：オプション      離：切り離し")
+            gui.Text("HL：ヘッドライト　TL：テールライト　RS：方向幕　　　　LE：LED 　　　　　RL：ルームライト　CA：運転台室内灯")
+            gui.Text("SC：入換標識灯　　EG：EG灯　　　　　SM：蒸気機関車煙　HM：ヘッドマーク　PA：パンタグラフ　OP：オプション　　離：切り離し")
             gui.TreePop()
         gui.Separator()
 
@@ -258,7 +254,7 @@ def imguiMakeTrain(gui, tr):
     gui.SameLine()
 
     # 名前表示
-    gui.Text(" {0} [{1}] {2}両".format(tr.GetTrainNumber(), strId, str(len(tr.GetCarList()))))
+    gui.Text("{0} [{1}] {2}両".format(tr.GetTrainNumber(), strId, str(len(tr.GetCarList()))))
 
 
 # 車両個別制御表示
@@ -408,12 +404,17 @@ def imguiMakeCar(gui, car):
 
 # 指定編成の点灯を制御
 def setPower(tr, sw):
+    # 車両数を取得
+    len = tr.GetNumberOfCars()
+    
     for car in tr.GetCarList():
-        # ヘッドライト
-        if car.GetCarPos() == 1:
+        # 先頭車両処理
+        if car.GetCarNumber() == 1:
+            # ヘッドライト
             car.SetHeadlight(sw)
-        # テールライト
-        if car.GetCarPos() == 2:
+        # 最後尾車両処理
+        if car.GetCarNumber() == len:
+            # テールライト
             car.SetTaillight(sw)
         # 方向幕
         car.SetRollsignLight(sw)
