@@ -1,37 +1,36 @@
-# -*- coding: utf-8 -*-
-"""
-パワーユニットくん
-"""
+__title__ = "パワーユニットくん Ver.1.5"
 __author__ = "Caldia"
-__status__ = "production"
-__version__ = "1.4"
-__date__    = "2021/03/10"
+__update__  = "2021/05/18"
 
 import vrmapi
 
 # ファイル読み込みの確認用
-vrmapi.LOG("import パワーユニットくん Ver." + __version__)
-
+vrmapi.LOG("import " + __title__)
 # ウィンドウ描画フラグ
 _drawEnable = True
 # アクティブ編成オブジェクト
 _activeTrainObj = None
+# ラジオボタン用
+_activeTrainRdo = [0]
 
 # main
 def vrmevent(obj,ev,param):
     global _drawEnable
     if ev == 'init':
-        #vrmapi.LOG("powerunit init")
+        # 初期化
         init()
+        # フレームイベント登録
         obj.SetEventFrame()
+        # pキー登録
         obj.SetEventKeyDown('P')
     elif ev == 'frame':
         if _drawEnable:
+            # ImGui描画
             drawFrame()
     elif ev == 'keydown':
         # ウィンドウ描画のON/OFF
-        #vrmapi.LOG("powerunit _drawEnable " + str(_drawEnable))
         if param['keycode'] == 'P':
+            # 表示反転
             _drawEnable = not _drawEnable
 
 
@@ -49,10 +48,10 @@ def init():
             di['pw_ch2'] = [0]
             di['pw_drl'] = [0]
             di['pw_drr'] = [0]
-            # 固定サイズの編成名を初期生成
-            di['pw_name'] = obj.GetNAME().ljust(16)
-            # センサー情報を入れるとウィンドウに表示
-            di['pw_ats'] = ''
+            di['pw_msg'] = ''
+            # 音の初期値を入力
+            if obj.GetSoundPlayMode() == 2:
+                di['pw_ch2'] = [1]
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(obj.GetNAME(), obj.GetID()))
 
@@ -83,15 +82,15 @@ def init():
             # 初期値設定
             di['pw_s0'] = [obj.GetStat(0)]
             di['pw_s1'] = [obj.GetStat(1)]
-            #vrmapi.LOG("{0} {1}".format(di['pw_s0'], di['pw_s1']))
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(obj.GetNAME(), obj.GetID()))
 
 # ウィンドウを描画(内部処理コストを抑える)
 def drawFrame():
+    global __title__
     # ImGui定義
     gui = vrmapi.ImGui()
-    gui.Begin("powerunit","パワーユニットくん")
+    gui.Begin("powerunit", __title__)
 
     if vrmapi.ImGui().TreeNode("pwtrain", "編成リスト"):
         # 編成リストを新規編成リストに格納
@@ -109,7 +108,7 @@ def drawFrame():
     # アクティブ編成が選択されている、かつ0車両以上
     global _activeTrainObj
     if _activeTrainObj is not None and len(_activeTrainObj.GetCarList()) > 0:
-        if vrmapi.ImGui().TreeNode("pwcar", "{0} [{1}] {2}".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID(), _activeTrainObj.GetTrainNumber())):
+        if vrmapi.ImGui().TreeNode("pwcar", "{0} [{1}] {2}".format(_activeTrainObj.GetTrainNumber(), _activeTrainObj.GetID(), _activeTrainObj.GetNAME())):
             # 車両ごとに処理
             for obj in _activeTrainObj.GetCarList():
                 imguiMakeCar(gui, obj)
@@ -154,21 +153,21 @@ def imguiMakeTrain(gui, tr):
     di = tr.GetDict()
 
     # 編成名が無ければ新規生成車両とみなす
-    if 'pw_name' not in di.keys():
+    if 'pw_ch1' not in di.keys():
         di['pw_ch1'] = [0]
         di['pw_ch2'] = [0]
         di['pw_drl'] = [0]
         di['pw_drr'] = [0]
-        # 固定サイズの編成名を初期生成
-        di['pw_name'] = tr.GetNAME().ljust(16)
-        # センサー情報を入れるとウィンドウに表示
-        di['pw_ats'] = ''
-        vrmapi.LOG("{0} [{1}] が検出されました".format(tr.GetNAME(), strId))
+        di['pw_msg'] = ''
+        # 音の初期値を入力
+        if obj.GetSoundPlayMode() == 2:
+            di['pw_ch2'] = [1]
+        vrmapi.LOG("[{0}] {1} が検出されました".format(strId, tr.GetNAME()))
 
-    # 編成名ボタン
-    if gui.Button("bt1" + strId, di['pw_name']):
+    # 編成名ラジオボタン
+    global _activeTrainRdo
+    if gui.RadioButton("rdo" + strId, tr.GetTrainNumber(), _activeTrainRdo, tr.GetID()):
         # 編成操作（アクティブ化）
-        #vrmapi.LOG(tr.GetNAME() + ".SetActive")
         tr.SetActive()
         tr.SetView()
         # 車両操作対象
@@ -182,7 +181,6 @@ def imguiMakeTrain(gui, tr):
     if gui.Button('bt2' + strId, "反"):
         # 方向転換
         tr.Turn()
-        #vrmapi.LOG(tr.GetNAME() + ".Turn")
     gui.SameLine()
 
     # 速度スライドバー
@@ -191,7 +189,6 @@ def imguiMakeTrain(gui, tr):
     if gui.SliderFloat('vl' + strId, '', vlary, 0, 1.0):
         # 電圧反映
         tr.SetVoltage(vlary[0])
-        #vrmapi.LOG(tr.GetNAME() + ".SetVoltage " + str(round(vlary[0], 2)))
     # サイズリセット
     gui.PopItemWidth()
     gui.SameLine()
@@ -206,7 +203,6 @@ def imguiMakeTrain(gui, tr):
     # 点灯チェックボックス
     if gui.Checkbox('ch1' + strId, '', swary):
         setPower(tr, swary[0])
-        #vrmapi.LOG(tr.GetNAME() + ".setPower " + str(swary[0]))
     gui.SameLine()
 
     # サウンド
@@ -217,7 +213,6 @@ def imguiMakeTrain(gui, tr):
     if gui.Checkbox('ch2' + strId, '', swary):
         # 音操作
         setSound(tr, swary[0])
-        #vrmapi.LOG(tr.GetNAME() + ".setSound " + str(swary[0]))
     gui.SameLine()
 
     # 扉L
@@ -228,7 +223,6 @@ def imguiMakeTrain(gui, tr):
     if gui.Checkbox('dr0' + strId, '', swary):
         # 扉L操作
         setDoor(tr, swary[0], 0)
-        #vrmapi.LOG(tr.GetNAME() + ".setDoor " + str(swary[0]))
     gui.SameLine()
 
     # 扉R
@@ -239,22 +233,20 @@ def imguiMakeTrain(gui, tr):
     if gui.Checkbox('dr1' + strId, '', swary):
         # 扉R操作
         setDoor(tr, swary[0], 1)
-        #vrmapi.LOG(tr.GetNAME() + ".setDoor " + str(swary[0]))
     gui.SameLine()
 
     # 警笛ボタン
     if gui.Button('bt3' + strId, '笛'):
         # 警笛
         tr.PlayHorn(0)
-        #vrmapi.LOG(tr.GetNAME() + ".PlayHorn")
-    gui.SameLine()
-
-    # 位置情報を表示
-    gui.Text(di['pw_ats'])
     gui.SameLine()
 
     # 名前表示
-    gui.Text("{0} [{1}] {2}両".format(tr.GetTrainNumber(), strId, str(len(tr.GetCarList()))))
+    gui.Text("[{0}] {1} {2}両".format(strId, tr.GetNAME(), len(tr.GetCarList())))
+    gui.SameLine()
+
+    # 位置情報を表示
+    gui.Text(di['pw_msg'])
 
 
 # 車両個別制御表示
@@ -268,7 +260,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetHeadlight()
     if gui.Checkbox('HL' + carId, '', [sw]):
         car.SetHeadlight(not bool(sw))
-        #vrmapi.LOG("SetHeadlight " + str(sw))
     gui.SameLine()
 
     # テールライト
@@ -277,7 +268,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetTaillight()
     if gui.Checkbox('TL' + carId, '', [sw]):
         car.SetTaillight(not bool(sw))
-        #vrmapi.LOG("SetTaillight " + str(sw))
     gui.SameLine()
 
     # 方向幕
@@ -286,7 +276,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetRollsignLight()
     if gui.Checkbox('RS' + carId, '', [sw]):
         car.SetRollsignLight(not bool(sw))
-        #vrmapi.LOG("SetRollsignLight " + str(sw))
     gui.SameLine()
 
     # LED
@@ -295,7 +284,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetLEDLight()
     if gui.Checkbox('LE' + carId, '', [sw]):
         car.SetLEDLight(not bool(sw))
-        #vrmapi.LOG("SetLEDLight " + str(sw))
     gui.SameLine()
 
     # 室内灯
@@ -304,7 +292,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetRoomlight()
     if gui.Checkbox('RL' + carId, '', [sw]):
         car.SetRoomlight(not bool(sw))
-        #vrmapi.LOG("SetRoomlight " + str(sw))
     gui.SameLine()
 
     # 運転台室内灯
@@ -313,7 +300,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetCabLight()
     if gui.Checkbox('CA' + carId, '', [sw]):
         car.SetCabLight(not bool(sw))
-        #vrmapi.LOG("SetCabLight " + str(sw))
     gui.SameLine()
 
     # 入換標識灯
@@ -322,7 +308,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetSCIndicator()
     if gui.Checkbox('SC' + carId, '', [sw]):
         car.SetSCIndicator(not bool(sw))
-        #vrmapi.LOG("SetSCIndicator " + str(sw))
     gui.SameLine()
 
     # EG灯
@@ -331,7 +316,6 @@ def imguiMakeCar(gui, car):
     sw = car.GetEGIndicator()
     if gui.Checkbox('EG' + carId, '', [sw]):
         car.SetEGIndicator(not bool(sw))
-        #vrmapi.LOG("SetEGIndicator " + str(sw))
     gui.SameLine()
 
     # 末尾以外かつ2両編成以上
@@ -343,7 +327,6 @@ def imguiMakeCar(gui, car):
         if gui.Button('bc1' + carId, "離"):
             # 車両を切り離し
             tr.SplitTrain(car.GetCarNumber())
-            #vrmapi.LOG("SplitTrain " + carId)
         gui.SameLine()
 
     # 蒸気機関車煙（テンダーも対象）
@@ -353,7 +336,6 @@ def imguiMakeCar(gui, car):
         sw = car.GetSmoke()
         if gui.Checkbox('SM' + carId, '', [sw]):
             car.SetSmoke(not bool(sw))
-            #vrmapi.LOG("SetSmoke " + str(sw))
         gui.SameLine()
 
     # ヘッドマーク
@@ -367,7 +349,6 @@ def imguiMakeCar(gui, car):
             sw = car.GetHeadmarkDisp(idx)
             if gui.Checkbox('HN' + str(idx) + carId, '', [sw]):
                 car.SetHeadmarkDisp(idx, not bool(sw))
-                #vrmapi.LOG("SetHeadmarkDisp " + str(idx) + " " + str(sw))
             gui.SameLine()
         gui.Text("]")
         gui.SameLine()
@@ -383,7 +364,6 @@ def imguiMakeCar(gui, car):
             sw = car.GetPantograph(idx)
             if gui.Checkbox('PA' + str(idx) + carId, '', [sw]):
                 car.SetPantograph(idx, not bool(sw))
-                #vrmapi.LOG("SetPantograph " + str(idx) + " " + str(sw))
             gui.SameLine()
         gui.Text("]")
         gui.SameLine()
@@ -397,7 +377,6 @@ def imguiMakeCar(gui, car):
         sw = car.GetOptionDisp(idx)
         if gui.Checkbox('OP' + str(idx) + carId, '', [sw]):
             car.SetOptionDisp(idx, not bool(sw))
-            #vrmapi.LOG("SetOptionDisp " + str(idx) + " " + str(sw))
         gui.SameLine()
     gui.Text("]")
 
@@ -408,12 +387,10 @@ def setPower(tr, sw):
     len = tr.GetNumberOfCars()
     
     for car in tr.GetCarList():
-        # 先頭車両処理
-        if car.GetCarNumber() == 1:
+        # 前後灯
+        if car.GetCarNumber() == 1 or car.GetCarNumber() == len:
             # ヘッドライト
             car.SetHeadlight(sw)
-        # 最後尾車両処理
-        if car.GetCarNumber() == len:
             # テールライト
             car.SetTaillight(sw)
         # 方向幕
@@ -465,13 +442,11 @@ def imguiMakePoint(gui, pt):
     # 直進ラジオボタン
     if gui.RadioButton('pr0' + strId, '', di['pw_r'], 0):
         pt.SetBranch(0)
-        #vrmapi.LOG(pt.GetNAME() + ".SetBranch 0")
     gui.SameLine()
 
     # 曲折ラジオボタン
     if gui.RadioButton('pr1' + strId, '', di['pw_r'], 1):
         pt.SetBranch(1)
-        #vrmapi.LOG(pt.GetNAME() + ".SetBranch 1")
     gui.SameLine()
 
     # 名前表示
@@ -486,8 +461,6 @@ def imguiMakeSignal(gui, sg):
     di = sg.GetDict()
 
     for idx in range(0, 7):
-        #gui.Text(str(idx))
-        #gui.SameLine()
         sw = 0
         if di['pw_s0'][0] == [idx]:
             sw = 1
