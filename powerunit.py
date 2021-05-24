@@ -216,7 +216,7 @@ def imguiMakeTrain(gui, tr):
     gui.SameLine()
 
     # 扉L
-    gui.Text(" 扉L")
+    gui.Text(" 扉LR")
     gui.SameLine()
     swary = di['pw_drl']
     # 扉Lチェックボックス
@@ -226,8 +226,8 @@ def imguiMakeTrain(gui, tr):
     gui.SameLine()
 
     # 扉R
-    gui.Text(" 扉R")
-    gui.SameLine()
+    #gui.Text("扉R")
+    #gui.SameLine()
     swary = di['pw_drr']
     # 扉Rチェックボックス
     if gui.Checkbox('dr1' + strId, '', swary):

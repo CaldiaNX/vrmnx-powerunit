@@ -48,21 +48,17 @@ import パワーユニットくん Ver.x.x
 
 が表示されます。
 
-ビュワー起動時に列車とポイントの初期設定を行います。  
-下記編成とポイントは操作対象外としてスキップされます。
-
-- ダミー編成
-- 頭文字に「dummy」が付くポイント
-
 ## 操作説明
 
-![pwunkn12](https://user-images.githubusercontent.com/66538961/109386008-1bb7e500-793b-11eb-8f2e-b59e02f9ac4d.png)
+![powerunit](https://user-images.githubusercontent.com/66538961/119366693-2e4c7b00-bcec-11eb-860a-9b40405f767f.png)
 
 ### 編成リスト
-- 「編成名」ボタン
+
+「ダミー編成」以外の編成が一覧に表示されます。
+
+- 「列車番号」ラジオボタン
   - 押すと編成が[アクティブ](https://vrmcloud.net/nx/script/script/train/SetActive.html)になります。
   - 車両リストの制御対象となります。
-  - 表示名称に全角が混じる場合はボタンサイズにずれが生じます。
 - 「反」ボタン
   - 押すと編成の[進行方向を反転](https://vrmcloud.net/nx/script/script/train/Turn.html)します。
 - 「電圧」スライドバー
@@ -70,12 +66,12 @@ import パワーユニットくん Ver.x.x
 - 「全灯」チェックボックス
   - 電装系のON/OFFを一括で切り替えます。
 - 「音」チェックボックス
-  - 音のON/OFFを切り替えます。
+  - [サウンド再生モード](https://vrmcloud.net/nx/script/script/train/SetSoundPlayMode.html)のON/OFFを切り替えます。
 - 「扉L」「扉R」チェックボックス
-  - 扉を開閉します。
+  - 扉の開閉に対応した車両の客室扉を開閉します。
 - 「笛」ボタン
   - 列車の[警笛](https://vrmcloud.net/nx/script/script/train/PlayHorn.html)を鳴らします。
-- 末尾に編成番号、ID、車両数が表示されます。
+- 末尾にID、データ名、車両数が表示されます。
 
 ### 車両リスト
 「編成名ボタン」で選択した編成の車両設定を個別に設定できます。
@@ -97,9 +93,9 @@ import パワーユニットくん Ver.x.x
 |13|PA|パンタグラフ|[GetPantograph](https://vrmcloud.net/nx/script/script/car/GetPantograph.html) / [SetPantograph](https://vrmcloud.net/nx/script/script/car/SetPantograph.html) / [GetCountOfPantograph](https://vrmcloud.net/nx/script/script/car/GetCountOfPantograph.html)|
 |14|OP|オプション  |[GetOptionDisp](https://vrmcloud.net/nx/script/script/car/GetOptionDisp.html) / [SetOptionDisp](https://vrmcloud.net/nx/script/script/car/SetOptionDisp.html)|
 
-- 「切り離し」は2両以上の編成で最後尾以外
-- 「蒸気機関車煙」は[車輌の種類](https://vrmcloud.net/nx/script/script/car/GetCarType.html)が蒸気機関車(テンダー含む)のみ表示  
-- 「ヘッドマーク」と「パンタグラフ」は設定のある車両のみ表示
+- 「切り離し」は2両以上の編成かつ最後尾以外で表示します。
+- 「蒸気機関車煙」は[車輌の種類](https://vrmcloud.net/nx/script/script/car/GetCarType.html)が蒸気機関車(テンダー含む)のみ表示  します。
+- 「ヘッドマーク」と「パンタグラフ」は設定のある車両のみ表示します。
 
 ### センサー情報表示
 センサーに以下のコードを記載することで、編成リスト末尾に文字を表示することが出来ます。
@@ -110,8 +106,8 @@ elif ev == 'catch':
     tr = obj.GetTrain()
     # 列車のDict配列を取得
     di = tr.GetDict()
-    # 「pw_ats」キーに文字列を定義
-    di["pw_ats"] = obj.GetNAME() + " 通過"
+    # キーに文字列を定義
+    di["pw_msg"] = obj.GetNAME() + " 通過"
 ```
 
 ### ポイントリスト
@@ -123,6 +119,12 @@ elif ev == 'catch':
 初期表示を変える場合は「_drawEnable」のTrue/Falseを変更して下さい。
 
 ## 履歴
+- 2021/05/25 v1.5
+  - Active編成の選択をラジオボタンに変更
+  - データ名と編成番号の表示位置を入れ替え(標準ラベル表記に合わせる)
+  - 「扉」チェックボックスを縮小
+  - 「音」チェックボックスの初期状態を「GetSoundPlayMode」で取得するように改善
+  - 他、ヘッダーやコメントアウトしていたコードなどを整理
 - 2021/03/10 v1.4
   - ウィンドウON/OFFを簡略化。
   - 操作説明を2行。
