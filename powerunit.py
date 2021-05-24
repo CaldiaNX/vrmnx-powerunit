@@ -1,6 +1,6 @@
 __title__ = "パワーユニットくん Ver.1.5"
 __author__ = "Caldia"
-__update__  = "2021/05/18"
+__update__  = "2021/05/25"
 
 import vrmapi
 
