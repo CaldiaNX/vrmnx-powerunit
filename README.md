@@ -97,9 +97,9 @@ import パワーユニットくん Ver.x.x
 |13|PA|パンタグラフ|[GetPantograph](https://vrmcloud.net/nx/script/script/car/GetPantograph.html) / [SetPantograph](https://vrmcloud.net/nx/script/script/car/SetPantograph.html) / [GetCountOfPantograph](https://vrmcloud.net/nx/script/script/car/GetCountOfPantograph.html)|
 |14|OP|オプション  |[GetOptionDisp](https://vrmcloud.net/nx/script/script/car/GetOptionDisp.html) / [SetOptionDisp](https://vrmcloud.net/nx/script/script/car/SetOptionDisp.html)|
 
-- 「切り離し」は2両以上の編成かつ最後尾以外で表示します。
-- 「蒸気機関車煙」は[車輌の種類](https://vrmcloud.net/nx/script/script/car/GetCarType.html)が蒸気機関車(テンダー含む)のみ表示  します。
-- 「ヘッドマーク」と「パンタグラフ」は設定のある車両のみ表示します。
+- 「切り離し」は2両以上の編成かつ最後尾以外で表示されます。
+- 「蒸気機関車煙」は[車輌の種類](https://vrmcloud.net/nx/script/script/car/GetCarType.html)が蒸気機関車（テンダー含む）のみ表示されます。
+- 「ヘッドマーク」と「パンタグラフ」は設定のある車両のみ表示されます。
 
 ### センサー情報表示
 センサーに以下のコードを記載することで、編成リスト末尾に文字を表示することが出来ます。
