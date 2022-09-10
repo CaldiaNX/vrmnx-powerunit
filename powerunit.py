@@ -29,14 +29,13 @@ def vrmevent(obj,ev,param):
         obj.SetEventFrame()
         # pキー登録
         obj.SetEventKeyDown('P', __eventUID__)
-        # 自動ロードを有効にする場合はコメントアウトを外す
+        # 自動ロードを有効にする場合はコメントアウトを外します。
         #loadConfig()
     elif ev == 'frame':
         if _drawEnable:
             # ImGui描画
             drawFrame()
     elif ev == 'keydown':
-        global __eventUID__
         # ウィンドウ描画のON/OFF
         if param['keycode'] == 'P' and param['eventUID'] == __eventUID__:
             # 表示反転
