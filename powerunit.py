@@ -1,7 +1,6 @@
 __title__ = "パワーユニットくん Ver.2.1"
 __author__ = "Caldia"
-__update__  = "2022/09/10"
-__eventUID__ = 1100001
+__update__  = "2022/09/11"
 
 import vrmapi
 import os
@@ -28,7 +27,7 @@ def vrmevent(obj,ev,param):
         # フレームイベント登録
         obj.SetEventFrame()
         # pキー登録
-        obj.SetEventKeyDown('P', __eventUID__)
+        obj.SetEventKeyDown('P')
         # 自動ロードを有効にする場合はコメントアウトを外します。
         #loadConfig()
     elif ev == 'frame':
@@ -37,7 +36,7 @@ def vrmevent(obj,ev,param):
             drawFrame()
     elif ev == 'keydown':
         # ウィンドウ描画のON/OFF
-        if param['keycode'] == 'P' and param['eventUID'] == __eventUID__:
+        if param['keycode'] == 'P':
             # 表示反転
             _drawEnable = not _drawEnable
 
