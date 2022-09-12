@@ -1,6 +1,6 @@
-__title__ = "パワーユニットくん Ver.2.1"
+__title__ = "パワーユニットくん Ver.2.2"
 __author__ = "Caldia"
-__update__  = "2022/09/11"
+__update__  = "2022/09/13"
 
 import vrmapi
 import os
@@ -192,9 +192,6 @@ def drawFrame():
         if gui.Button('bt_lod', "ロード"):
             # 状態をjsonファイルから読み込み
             loadConfig()
-            # ロード後に音源適用
-            for tr in tList:
-                imguiMakeSound(gui, tr)
         # 注意事項
         gui.Text("車両状態と分岐状態(選択可)をjsonファイルへ出力します。")
         gui.Text("車両編成の更新がある場合、エラーとなる可能性があります。")
@@ -669,6 +666,10 @@ def copyWaveDict(newDict, orgDict):
     newDict['pw_wav_com'] = orgDict['pw_wav_com'].copy()
     newDict['pw_wav_ho1'] = orgDict['pw_wav_ho1'].copy()
     newDict['pw_wav_ho2'] = orgDict['pw_wav_ho2'].copy()
+    newDict['pw_wav_dc'] = orgDict['pw_wav_dc'].copy()
+    newDict['pw_wav_dp'] = orgDict['pw_wav_dp'].copy()
+    newDict['pw_wav_g1'] = orgDict['pw_wav_g1'].copy()
+    newDict['pw_wav_g2'] = orgDict['pw_wav_g2'].copy()
     newDict['pw_wav_sl1'] = orgDict['pw_wav_sl1'].copy()
     newDict['pw_wav_sl2'] = orgDict['pw_wav_sl2'].copy()
     newDict['pw_wav_sl3'] = orgDict['pw_wav_sl3'].copy()
