@@ -1,6 +1,6 @@
-__title__ = "パワーユニットくん Ver.2.2"
+__title__ = "パワーユニットくん Ver.3.0"
 __author__ = "Caldia"
-__update__  = "2022/09/13"
+__update__  = "2023/01/12"
 
 import vrmapi
 import os
@@ -17,13 +17,16 @@ _activeTrainRdo = [0]
 # 分岐保存フラグ
 _saveSwitchEnable = [0]
 _saveSwitchEnable[0] = False
+# 踏切保存フラグ
+#_saveCrossingEnable = [0]
+#_saveCrossingEnable[0] = False
 
 # main
 def vrmevent(obj,ev,param):
     global _drawEnable
     if ev == 'init':
         # 初期化
-        init()
+        init(obj)
         # フレームイベント登録
         obj.SetEventFrame()
         # pキー登録
@@ -33,7 +36,7 @@ def vrmevent(obj,ev,param):
     elif ev == 'frame':
         if _drawEnable:
             # ImGui描画
-            drawFrame()
+            drawFrame(obj)
     elif ev == 'keydown':
         # ウィンドウ描画のON/OFF
         if param['keycode'] == 'P':
@@ -42,76 +45,103 @@ def vrmevent(obj,ev,param):
 
 
 # オブジェクト内に変数初期設定
-def init():
+def init(obj):
     # 編成リストを新規リストに格納
     tList = vrmapi.LAYOUT().GetTrainList()
-    # 編成リストから編成を繰り返し取得
+    # 編成リストから繰り返し取得
     for tr in tList:
         # ダミー編成以外
         if tr.GetDummyMode() == False:
             # 変数初期化
             createDictKey(tr)
-            # 編成オブジェクト内に表示用タグ作成
-            di = tr.GetDict()
             # 音の初期値を入力
+            di = tr.GetDict()
             if tr.GetSoundPlayMode() == 2:
                 di['pw_ch2'] = [1]
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(tr.GetNAME(), tr.GetID()))
 
+    # レイアウトDict呼出し
+    l_di = obj.GetDict()
     # ポイントリストを新規リストに格納
     pList=list()
     vrmapi.LAYOUT().ListPoint(pList)
-    # ポイントリストからポイントを繰り返し取得
+    l_di['pw_pList'] = []
+    # ポイントリストから繰り返し取得
     for pt in pList:
         # 頭文字「dummy」は対象外
         if pt.GetNAME()[0:5] != 'dummy':
-            # ポイントオブジェクトに表示用タグ作成
+            # 分岐の初期値設定
             di = pt.GetDict()
-            # 初期値設定
             di['pw_r'] = [pt.GetBranch()]
+            # リスト追加
+            l_di['pw_pList'].append(pt)
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(pt.GetNAME(), pt.GetID()))
 
     # 信号リストを新規リストに格納
     sList=list()
     vrmapi.LAYOUT().ListSignal(sList)
-    # ポイントリストからポイントを繰り返し取得
+    l_di['pw_sList'] = []
+    # 信号リストから繰り返し取得
     for sg in sList:
         # 頭文字「dummy」は対象外
         if sg.GetNAME()[0:5] != 'dummy':
-            # ポイントオブジェクトに表示用タグ作成
+            # 点灯の初期値設定
             di = sg.GetDict()
-            # 初期値設定
             di['pw_s0'] = [sg.GetStat(0)]
             di['pw_s1'] = [sg.GetStat(1)]
+            # リスト追加
+            l_di['pw_sList'].append(sg)
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(sg.GetNAME(), sg.GetID()))
-
 
     # 音源リストを新規リストに格納
     bList=list()
     vrmapi.LAYOUT().ListBell(bList)
-    # 音源リストから音源を繰り返し取得
+    l_di['pw_bList'] = []
+    # 音源リストから繰り返し取得
     for bl in bList:
         # 頭文字「dummy」は対象外
         if bl.GetNAME()[0:5] != 'dummy':
-            # 音源オブジェクトに表示用タグ作成
-            di = bl.GetDict()
             # 初期値設定
+            di = bl.GetDict()
             di['pw_b'] = [0]
+            # リスト追加
+            l_di['pw_bList'].append(bl)
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(bl.GetNAME(), bl.GetID()))
 
+    # 踏切リストを新規リストに格納
+    xList=list()
+    vrmapi.LAYOUT().ListCrossing(xList)
+    l_di['pw_xList'] = []
+    l_di['pw_xTag'] = [0]
+    l_di['pw_xTagrb'] = [0]
+    # 踏切リストから繰り返し取得
+    for xs in xList:
+        # 頭文字「dummy」は対象外
+        if xs.GetNAME()[0:5] != 'dummy':
+            # 初期値設定
+            di = xs.GetDict()
+            di['pw_ass'] = [xs.ResetAutoSignStatus()]
+            di['pw_sig'] = [xs.GetCrossingSign()]
+            di['pw_sta'] = [xs.GetCrossingStatus()]
+            di['pw_tim'] = [xs.GetCrossingTime()]
+            # リスト追加
+            l_di['pw_xList'].append(xs)
+        else:
+            vrmapi.LOG("{0} [{1}] ダミースキップ".format(xs.GetNAME(), xs.GetID()))
+
 
 # ウィンドウ描画(ツリーを開いている箇所のみ処理してコストを抑える)
-def drawFrame():
+def drawFrame(obj):
     global __title__
     # ImGui定義
     gui = vrmapi.ImGui()
     gui.Begin("powerunit", __title__)
 
-    if gui.TreeNode("pwtrain", "編成リスト"):
+    if gui.TreeNode("pwtrain", "車両編成"):
         # 編成リストを新規編成リストに格納
         tList = vrmapi.LAYOUT().GetTrainList()
         # 編成一覧を参照
@@ -127,7 +157,7 @@ def drawFrame():
     # アクティブ編成が選択されている、かつ0車両以上
     global _activeTrainObj
     if _activeTrainObj is not None and len(_activeTrainObj.GetCarList()) > 0:
-        if gui.TreeNode("pwcar", "車両設定 {0} [{1}] {2}".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID(), _activeTrainObj.GetTrainNumber())):
+        if gui.TreeNode("pwcar", "車両操作 {0} [{1}] {2}".format(_activeTrainObj.GetNAME(), _activeTrainObj.GetID(), _activeTrainObj.GetTrainNumber())):
             # 車両ごとに処理
             for car in _activeTrainObj.GetCarList():
                 imguiMakeCar(gui, car)
@@ -140,42 +170,66 @@ def drawFrame():
             gui.TreePop()
         gui.Separator()
 
-    if gui.TreeNode("pwpoint", "ポイントリスト"):
+    # レイアウトDict呼出し
+    l_di = obj.GetDict()
+
+    if gui.TreeNode("pwpoint", "分岐ポイント"):
         # ポイントリストを取得
-        pList=list()
-        vrmapi.LAYOUT().ListPoint(pList)
+        pList = l_di['pw_pList']
         # ポイント一覧を参照
         gui.Text(" 直／曲  ポイント名 [ID]")
         for pt in pList:
-            # ダミーは対象外(名前判断)
-            if pt.GetNAME()[0:5] != 'dummy':
-                imguiMakePoint(gui, pt)
+            imguiMakePoint(gui, pt)
         gui.TreePop()
     gui.Separator()
 
-    if gui.TreeNode("pwsignal", "信号リスト"):
+    if gui.TreeNode("pwsignal", "信号"):
         # 信号リストを取得
-        sList=list()
-        vrmapi.LAYOUT().ListSignal(sList)
+        sList = l_di['pw_sList']
         # 信号一覧を参照
         gui.Text(" 信号名 [ID]")
         for sg in sList:
-            # ダミーは対象外(名前判断)
-            if sg.GetNAME()[0:5] != 'dummy':
-                imguiMakeSignal(gui, sg)
+            imguiMakeSignal(gui, sg)
         gui.TreePop()
     gui.Separator()
 
-    if gui.TreeNode("pwbell", "音源リスト"):
-        # 信号リストを取得
-        bList=list()
-        vrmapi.LAYOUT().ListBell(bList)
+    if gui.TreeNode("pwbell", "音源"):
+        # 音源リストを取得
+        bList = l_di['pw_bList']
         # 音源一覧を参照
-        gui.Text(" 停止/再生  音源名 [ID]")
+        gui.Text(" 停／再  音源名 [ID]")
         for bl in bList:
-            # ダミーは対象外(名前判断)
-            if bl.GetNAME()[0:5] != 'dummy':
-                imguiMakeBell(gui, bl)
+            imguiMakeBell(gui, bl)
+        gui.TreePop()
+    gui.Separator()
+
+    if gui.TreeNode("pwcross", "踏切(ホームドア)"):
+        # 踏切リストを取得
+        xList = l_di['pw_xList']
+        # 踏切一覧を参照
+        gui.Text(" 無 / 開 / 閉   無/→/←/双(開閉時間)  踏切名 [ID]")
+        for xs in xList:
+            imguiMakeCross(gui, xs)
+
+        # 踏切グループタグ制御
+        gui.Text("踏切グループタグ制御(数値のみ入力可能)")
+        if gui.RadioButton('xsta_tag0', '', l_di['pw_xTagrb'], 0):
+            tagInt = l_di['pw_xTag'][0]
+            obj.CrossingGroupCTRL(str(l_di['pw_xTag'][0]), 0)
+        gui.SameLine()
+        if gui.RadioButton('xsta_tag1', '', l_di['pw_xTagrb'], 1):
+            tagInt = l_di['pw_xTag'][0]
+            obj.CrossingGroupCTRL(str(tagInt), 1)
+        gui.SameLine()
+        if gui.RadioButton('xsta_tag2', ' ', l_di['pw_xTagrb'], 2):
+            tagInt = l_di['pw_xTag'][0]
+            obj.CrossingGroupCTRL(str(tagInt), 2)
+        gui.PushItemWidth(118.0)
+        gui.SameLine()
+        # 踏切タグ名(InputText無いのでIntで代用)
+        gui.InputInt("pwcrosstag", '', l_di['pw_xTag'])
+        gui.PopItemWidth()
+
         gui.TreePop()
     gui.Separator()
 
@@ -185,17 +239,22 @@ def drawFrame():
             # 状態をjsonファイルへ保存
             saveConfig()
         gui.SameLine()
-        # 分岐記録チェックボックス
-        global _saveSwitchEnable
-        gui.Checkbox('pw_ssf', "分岐情報も保存  ", _saveSwitchEnable)
         # ロードボタン
         if gui.Button('bt_lod', "ロード"):
             # 状態をjsonファイルから読み込み
             loadConfig()
+        gui.SameLine()
+        # 分岐記録チェックボックス
+        global _saveSwitchEnable
+        gui.Checkbox('pw_ssf', "分岐含む", _saveSwitchEnable)
+        #gui.SameLine()
+        # 踏切記録チェックボックス
+        #global _saveCrossingEnable
+        #gui.Checkbox('pw_sxf', "踏切含む", _saveCrossingEnable)
         # 注意事項
         gui.Text("車両状態と分岐状態(選択可)をjsonファイルへ出力します。")
-        gui.Text("車両編成の更新がある場合、エラーとなる可能性があります。")
-        gui.Text("ご利用にはご注意ください。")
+        gui.Text("車両編成更新後に古いファイルを読み込むとエラーになる可能性があります。")
+        gui.Text("読み込みエラー発生の場合は古いファイルを削除または上書きしてください。")
         gui.TreePop()
     gui.End()
 
@@ -256,8 +315,8 @@ def saveConfig():
         # ポイント用Dict
         pListDic = {}
         # ポイントリストを取得
-        pList=list()
-        vrmapi.LAYOUT().ListPoint(pList)
+        l_di = vrmapi.LAYOUT().GetDict()
+        pList = l_di['pw_pList']
         for pt in pList:
             # オブジェクトIDをキーとして格納
             pListDic[pt.GetID()] = pt.GetBranch()
@@ -332,11 +391,11 @@ def loadConfig():
                 vrmapi.LOG(f"[{sid}] 編成未確認")
 
     # ポイントリスト
-    if 'POINT' in loadDic:
+    if _saveSwitchEnable[0] and 'POINT' in loadDic:
         pListDic = loadDic['POINT']
         # ポイントリストを取得
-        pList=list()
-        vrmapi.LAYOUT().ListPoint(pList)
+        l_di = vrmapi.LAYOUT().GetDict()
+        pList = l_di['pw_pList']
         for pt in pList:
             # レイアウト内のポイントとオブジェクトIDが一致
             sid = str(pt.GetID())
@@ -345,6 +404,8 @@ def loadConfig():
                 pt.SetBranch(pListDic[sid])
             else:
                 vrmapi.LOG(f"[{sid}] ポイント未確認")
+    else:
+        vrmapi.LOG(f"ポイントロードをスキップ")
 
 
 # 必要編成オブジェクト初期作成
@@ -424,6 +485,12 @@ def imguiMakeTrain(gui, tr):
     gui.SameLine()
 
     # 反転ボタン
+    dirInt = tr.GetDirection()
+    dirStr = "前"
+    if dirInt == -1:
+        dirStr = "後"
+    gui.Text(dirStr)
+    gui.SameLine()
     if gui.Button('bt2' + strId, "反"):
         # 方向転換
         tr.Turn()
@@ -463,13 +530,13 @@ def imguiMakeTrain(gui, tr):
     # 扉R
     swary = di['pw_drr']
     # 扉Rチェックボックス
-    if gui.Checkbox('dr1' + strId, '扉LR ', swary):
+    if gui.Checkbox('dr1' + strId, '扉LR', swary):
         # 扉R操作
         setDoor(tr, swary[0], 1)
     gui.SameLine()
 
     # 名前表示
-    gui.Text("{0} [{1}] {2} {3}両 ".format(tr.GetNAME(), strId, tr.GetTrainNumber() ,len(tr.GetCarList())))
+    gui.Text("{0} [{1}] {2} {3}両".format(tr.GetNAME(), strId, tr.GetTrainNumber() ,len(tr.GetCarList())))
     gui.SameLine()
 
     # センサーメッセージを表示
@@ -803,3 +870,48 @@ def imguiMakeBell(gui, bl):
     gui.SameLine()
     # 名前表示
     gui.Text("{0} [{1}]".format(bl.GetNAME(), strId))
+
+
+# 踏切リストを作成します
+def imguiMakeCross(gui, xs):
+    # オブジェクトIDを取得
+    strId = str(xs.GetID())
+    # パラメータを取得
+    di = xs.GetDict()
+    di['pw_ass'] = [xs.ResetAutoSignStatus()]
+    di['pw_sig'] = [xs.GetCrossingSign()]
+    di['pw_sta'] = [xs.GetCrossingStatus()]
+    di['pw_tim'] = [xs.GetCrossingTime()]
+    # 開閉状態
+    if gui.RadioButton('xsta0' + strId, '', di['pw_sta'], 0):
+        xs.SetCrossingStatus(0)
+    gui.SameLine()
+    if gui.RadioButton('xsta1' + strId, '', di['pw_sta'], 1):
+        xs.SetCrossingStatus(1)
+    gui.SameLine()
+    if gui.RadioButton('xsta2' + strId, ' ', di['pw_sta'], 2):
+        xs.SetCrossingStatus(2)
+    gui.SameLine()
+    # 方向表示状態(警報機)
+    if di['pw_tim'][0] <= 0:
+        if gui.RadioButton('xsig0' + strId, '', di['pw_sig'], 0):
+            xs.SetCrossingSign(0)
+        gui.SameLine()
+        if gui.RadioButton('xsig1' + strId, '', di['pw_sig'], 1):
+            xs.SetCrossingSign(1)
+        gui.SameLine()
+        if gui.RadioButton('xsig2' + strId, '', di['pw_sig'], 2):
+            xs.SetCrossingSign(2)
+        gui.SameLine()
+        if gui.RadioButton('xsig3' + strId, '', di['pw_sig'], 3):
+            xs.SetCrossingSign(3)
+        gui.SameLine()
+    # 開閉時間(遮断機)
+    if di['pw_tim'][0] > 0:
+        gui.PushItemWidth(70.0)
+        if gui.InputFloat('xtim' + strId, '     ', di['pw_tim']):
+            xs.SetCrossingTime(di['pw_tim'][0])
+        gui.PopItemWidth()
+        gui.SameLine()
+    # 名前表示
+    gui.Text("{0} [{1}]".format(xs.GetNAME(), strId))
