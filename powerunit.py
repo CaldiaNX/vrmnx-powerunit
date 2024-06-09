@@ -1,10 +1,11 @@
-__title__ = "パワーユニットくん Ver.3.0"
+__title__ = "パワーユニットくん Ver.3.1"
 __author__ = "Caldia"
-__update__  = "2023/01/12"
+__update__  = "2024/06/09"
 
 import vrmapi
 import os
 import json
+import math
 
 # ファイル読み込みの確認用
 vrmapi.LOG("import " + __title__)
@@ -49,6 +50,7 @@ def init(obj):
     # 編成リストを新規リストに格納
     tList = vrmapi.LAYOUT().GetTrainList()
     # 編成リストから繰り返し取得
+    tListCount = 0
     for tr in tList:
         # ダミー編成以外
         if tr.GetDummyMode() == False:
@@ -58,11 +60,17 @@ def init(obj):
             di = tr.GetDict()
             if tr.GetSoundPlayMode() == 2:
                 di['pw_ch2'] = [1]
+            tListCount += 1
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(tr.GetNAME(), tr.GetID()))
 
     # レイアウトDict呼出し
     l_di = obj.GetDict()
+    # 編成数を記録(増減で連結切り離しを検知)
+    l_di['pw_tListCnt'] = tListCount
+    # 編成リストを更新(初回)
+    UpdateTrainListTxt(tList)
+
     # ポイントリストを新規リストに格納
     pList=list()
     vrmapi.LAYOUT().ListPoint(pList)
@@ -141,9 +149,12 @@ def drawFrame(obj):
     gui = vrmapi.ImGui()
     gui.Begin("powerunit", __title__)
 
-    if gui.TreeNode("pwtrain", "車両編成"):
+    if gui.TreeNode("pwtrain", "列車編成"):
         # 編成リストを新規編成リストに格納
-        tList = vrmapi.LAYOUT().GetTrainList()
+        tList = obj.GetTrainList()
+        # レイアウトDict呼出し
+        l_di = obj.GetDict()
+        tListCount = 0
         # 編成一覧を参照
         for tr in tList:
             # ダミー編成以外
@@ -151,6 +162,13 @@ def drawFrame(obj):
                 # 車両数が0以上(連結消失で発生)
                 if len(tr.GetCarList()) > 0:
                     imguiMakeTrain(gui, tr)
+                    tListCount += 1
+        # 有効編成数を比較
+        if l_di['pw_tListCnt'] != tListCount:
+            # 増減あれば更新
+            UpdateTrainListTxt(tList)
+            vrmapi.LOG("編成数が {0} -> {1} に変化しました".format(l_di['pw_tListCnt'], tListCount))
+            l_di['pw_tListCnt'] = tListCount
         gui.TreePop()
     gui.Separator()
 
@@ -418,6 +436,7 @@ def createDictKey(tr):
     trDi['pw_msg'] = ''
     trDi['pw_wav_car'] = [0]
     trDi['pw_wav_car'][0] = 1
+    trDi['pw_txt'] = ''
     # 音源用
     cList = tr.GetCarList()
     # 編成内の車両リストを繰り返し
@@ -440,6 +459,44 @@ def createDictKey(tr):
         carDi['pw_wav_sl3'] = [0]
         carDi['pw_wav_vvv'] = [0]
         carDi['pw_wav_pow'] = [0]
+
+
+# ダミー除く全編成の基本情報を更新
+def UpdateTrainListTxt(tList):
+    # 編成リストから繰り返し取得
+    for tr in tList:
+        # 編成内のパラメータを取得
+        di = tr.GetDict()
+        # ダミー編成以外
+        if tr.GetDummyMode() == False:
+            # 全編成基本情報を更新
+            di['pw_txt'] = "{0} [{1}] {2} {3}両 {4}mm".format(tr.GetNAME(), tr.GetID(), tr.GetTrainNumber() ,len(tr.GetCarList()), getTrainLength(tr))
+
+
+# 編成の全長を求める
+def getTrainLength(tr):
+    car_list = tr.GetCarList()
+    # 前輪と後輪の位置と編成長の変数
+    pos0 = []
+    pos1 = []
+    length = 0.0
+    # 編成全体を繰り返し
+    for car in car_list:
+        # 前輪チェック
+        pos0 = car.GetTirePosition(0)
+        # 1両目の前輪時はスキップ
+        if car.GetCarNumber() > 1:
+            # 距離計算
+            length += math.sqrt((pos1[0] - pos0[0]) ** 2 + (pos1[2] - pos0[2]) ** 2 + (pos1[1] - pos0[1]) ** 2)
+        # 確認用
+        #vrmapi.LOG("F\t{0}\t{1}\t{2}\t{3}".format(pos0[0], pos0[2], pos0[1], length))
+        # 後輪チェック
+        pos1 = car.GetTirePosition(1)
+        # 距離計算
+        length += math.sqrt((pos1[0] - pos0[0]) ** 2 + (pos1[2] - pos0[2]) ** 2 + (pos1[1] - pos0[1]) ** 2)
+        # 確認用
+        #vrmapi.LOG("R\t{0}\t{1}\t{2}\t{3}".format(pos1[0], pos1[2], pos1[1], length))
+    return round(length)
 
 
 # 編成コントローラを作成
@@ -530,13 +587,21 @@ def imguiMakeTrain(gui, tr):
     # 扉R
     swary = di['pw_drr']
     # 扉Rチェックボックス
-    if gui.Checkbox('dr1' + strId, '扉LR', swary):
+    if gui.Checkbox('dr1' + strId, '扉LR ', swary):
         # 扉R操作
         setDoor(tr, swary[0], 1)
     gui.SameLine()
 
-    # 名前表示
-    gui.Text("{0} [{1}] {2} {3}両".format(tr.GetNAME(), strId, tr.GetTrainNumber() ,len(tr.GetCarList())))
+    # 描画
+    swary = [tr.IsVisible()]
+    # 表示チェックボックス
+    if gui.Checkbox('vis' + strId, '表示 ', swary):
+        # 表示操作
+        tr.SetVisible(swary[0])
+    gui.SameLine()
+
+    # 編成情報
+    gui.Text(di['pw_txt'])
     gui.SameLine()
 
     # センサーメッセージを表示
@@ -645,7 +710,7 @@ def imguiMakeCar(gui, car):
     # オプション
     gui.Text('OP[')
     gui.SameLine()
-    for idx in range(0, 4):
+    for idx in range(0, 7):
         gui.Text(str(idx))
         gui.SameLine()
         sw = car.GetOptionDisp(idx)
