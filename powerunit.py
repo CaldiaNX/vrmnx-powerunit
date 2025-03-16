@@ -1,6 +1,6 @@
-__title__ = "パワーユニットくん Ver.3.1"
+__title__ = "パワーユニットくん Ver.3.2"
 __author__ = "Caldia"
-__update__  = "2024/06/09"
+__update__  = "2025/03/16"
 
 import vrmapi
 import os
@@ -141,6 +141,21 @@ def init(obj):
         else:
             vrmapi.LOG("{0} [{1}] ダミースキップ".format(xs.GetNAME(), xs.GetID()))
 
+    # エミッターリストを新規リストに格納
+    eList=list()
+    vrmapi.LAYOUT().ListEmitter(eList)
+    l_di['pw_eList'] = []
+    # エミッターリストから繰り返し取得
+    for es in eList:
+        # 頭文字「EMITTER_」(標準)は対象外
+        if es.GetNAME()[0:8] != 'EMITTER_':
+            # 初期値設定
+            di = es.GetDict()
+            # リスト追加
+            l_di['pw_eList'].append(es)
+        else:
+            vrmapi.LOG("{0} [{1}] スキップ".format(es.GetNAME(), es.GetID()))
+
 
 # ウィンドウ描画(ツリーを開いている箇所のみ処理してコストを抑える)
 def drawFrame(obj):
@@ -247,7 +262,39 @@ def drawFrame(obj):
         # 踏切タグ名(InputText無いのでIntで代用)
         gui.InputInt("pwcrosstag", '', l_di['pw_xTag'])
         gui.PopItemWidth()
+        gui.TreePop()
+    gui.Separator()
 
+    if gui.TreeNode("pwemitter", "エミッター"):
+        # エミッターリストを取得
+        eList = l_di['pw_eList']
+        for es in eList:
+            strId = str(es.GetID())
+            if gui.Button("eb1"+ strId, "Start"):
+                # エミッター開始
+                es.Start()
+            gui.SameLine()
+            if gui.Button("eb2"+ strId, "Stop"):
+                # エミッター停止
+                es.Stop()
+            gui.SameLine()
+            if gui.Button("eb3"+ strId, "Kick"):
+                # エミッターを一度だけ実行
+                es.Kick()
+            gui.SameLine()
+            # スライドバーサイズ調整
+            gui.PushItemWidth(100.0)
+            # パーティクル生成数取得
+            pcary = [es.GetPCreateFactor()]
+            if gui.SliderFloat('es' + strId, '', pcary, 0, 1.0):
+                # パーティクル生成数反映
+                es.SetPCreateFactor(pcary[0])
+            # サイズリセット
+            gui.PopItemWidth()
+            # エミッター情報
+            gui.SameLine()
+            gui.Text("{0} [{1}]".format(es.GetNAME(), strId))
+        gui.Text("エミッターを表示させる場合はエミッター部品名の頭文字を「EMITTER_」以外にしてください。")
         gui.TreePop()
     gui.Separator()
 

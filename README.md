@@ -28,18 +28,7 @@ def vrmevent(obj,ev,param):
     powerunit.vrmevent(obj,ev,param) # ★メイン処理
     if ev == 'init':
         dummy = 1
-    elif ev == 'broadcast':
-        dummy = 1
-    elif ev == 'timer':
-        dummy = 1
-    elif ev == 'time':
-        dummy = 1
-    elif ev == 'after':
-        dummy = 1
-    elif ev == 'frame':
-        dummy = 1
-    elif ev == 'keydown':
-        dummy = 1
+# (省略) #
 ```
 
 ファイル読み込みに成功するとビュワー起動直後にスクリプトログへ下記メッセージが表示されます。
@@ -164,6 +153,18 @@ elif ev == 'catch':
 踏切タググループを入力して一括制御できます。  
 (ImGuiのInputBox未実装のため、入力文字は整数値に制限されます)
 
+### エミッター
+頭文字に「EMITTER_」が付かない名前変更されたオブジェクトが操作対象になります。  
+以下の命令に対応しています。
+
+|列|略称|対象|関連関数|
+|--|----|----|--------|
+| 1|Start|エミッター開始      |[Start](https://vrmcloud.net/nx/script/script/emitter/Start.html)|
+| 2|Stop |エミッター停止      |[Stop](https://vrmcloud.net/nx/script/script/emitter/Stop.html)|
+| 3|Kick |エミッターを1回実行 |[Kick](https://vrmcloud.net/nx/script/script/emitter/Kick.html)|
+| 4|スライドバー|パーティクル生成数調整|[SetPCreateFactor](https://vrmcloud.net/nx/script/script/emitter/SetPCreateFactor.html)|
+
+
 ### 設定保存
 「セーブ」ボタンを押すと車両設定とポイント設定の状態をjsonファイルへ保存できます。  
 「ロード」ボタンを押すとjsonファイルから状態を復元します。  
@@ -178,6 +179,8 @@ loadConfig() # ★ここのコメントアウトを外す
 
 
 ## 履歴
+- 2025/03/16 v3.2
+  - エミッターに対応
 - 2024/06/09 v3.1
   - 編成表示切替を追加
   - 車両オプションを4個から7個(0～6)へ追加(キハ40系以降対応)
