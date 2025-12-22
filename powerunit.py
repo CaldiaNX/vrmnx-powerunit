@@ -1,6 +1,6 @@
-__title__ = "パワーユニットくん Ver.3.2"
+__title__ = "パワーユニットくん Ver.3.3"
 __author__ = "Caldia"
-__update__  = "2025/03/16"
+__update__  = "2025/12/23"
 
 import vrmapi
 import os
@@ -708,14 +708,32 @@ def imguiMakeCar(gui, car):
         car.SetEGIndicator(not bool(sw))
     gui.SameLine()
 
-    # 末尾以外かつ2両編成以上
+    # 2両編成以上
     tr = car.GetTrain()
-    if car.GetCarPos() != 2 and len(tr.GetCarList()) > 1:
-        # 分割ボタン
-        if gui.Button('bc1' + carId, "離"):
-            # 車両を切り離し
-            tr.SplitTrain(car.GetCarNumber())
+    if len(tr.GetCarList()) > 1:
+        # 末尾以外
+        if car.GetCarPos() != 2:
+            # 分割ボタン
+            if gui.Button('bc1' + carId, "離"):
+                # 車両を切り離し
+                tr.SplitTrain(car.GetCarNumber())
+            gui.SameLine()
+        else:
+            # 末尾位置調整用ダミーボタン
+            gui.Button('bc1' + carId, "／")
+            gui.SameLine()
+
+    # オプション
+    gui.Text('OP[ 0')
+    gui.SameLine()
+    for idx in range(0, 7):
         gui.SameLine()
+        sw = car.GetOptionDisp(idx)
+        if gui.Checkbox('OP' + str(idx) + carId, '', [sw]):
+            car.SetOptionDisp(idx, not bool(sw))
+        gui.SameLine()
+    gui.Text('6 ] ')
+    gui.SameLine()
 
     # 蒸気機関車煙（蒸気機関車のみ、テンダーも対象）
     if car.GetCarType() == 1:
@@ -727,14 +745,16 @@ def imguiMakeCar(gui, car):
     # ヘッドマーク（適用車両のみ）
     n = car.GetCountOfHeadmark()
     if n > 0:
-        gui.Text('HM[')
+        gui.Text('HM[ 0')
         gui.SameLine()
         for idx in range(0, n):
-            gui.Text(str(idx))
             gui.SameLine()
             sw = car.GetHeadmarkDisp(idx)
             if gui.Checkbox('HN' + str(idx) + carId, '', [sw]):
                 car.SetHeadmarkDisp(idx, not bool(sw))
+            gui.SameLine()
+        if n >= 2:
+            gui.Text(str(n - 1))
             gui.SameLine()
         gui.Text('] ')
         gui.SameLine()
@@ -742,30 +762,22 @@ def imguiMakeCar(gui, car):
     # パンタグラフ（適用車両のみ）
     n = car.GetCountOfPantograph()
     if n > 0:
-        gui.Text('PA[')
+        gui.Text('PA[ 0')
         gui.SameLine()
         for idx in range(0, n):
-            gui.Text(str(idx))
             gui.SameLine()
             sw = car.GetPantograph(idx)
             if gui.Checkbox('PA' + str(idx) + carId, '', [sw]):
                 car.SetPantograph(idx, not bool(sw))
             gui.SameLine()
+        if n >= 2:
+            gui.Text(str(n - 1))
+            gui.SameLine()
         gui.Text('] ')
         gui.SameLine()
 
-    # オプション
-    gui.Text('OP[')
-    gui.SameLine()
-    for idx in range(0, 7):
-        gui.Text(str(idx))
-        gui.SameLine()
-        sw = car.GetOptionDisp(idx)
-        if gui.Checkbox('OP' + str(idx) + carId, '', [sw]):
-            car.SetOptionDisp(idx, not bool(sw))
-        gui.SameLine()
-    gui.Text('] ')
-
+    # 最終SameLineの取消用
+    gui.Text('')
 
 # 車両音源設定
 def imguiMakeSound(gui, tr):
@@ -790,7 +802,7 @@ def imguiMakeSound(gui, tr):
     gui.InputInt('pw_wav_die', "Diesel", carDi['pw_wav_die'])
     gui.SameLine()
     gui.InputInt('pw_wav_com', "ｺﾝﾌﾟﾚｯｻｰ", carDi['pw_wav_com'])
-    #gui.SameLine()
+    # 改行
     gui.InputInt('pw_wav_ho1', "警笛1", carDi['pw_wav_ho1'])
     gui.SameLine()
     gui.InputInt('pw_wav_ho2', "警笛2", carDi['pw_wav_ho2'])
@@ -802,7 +814,7 @@ def imguiMakeSound(gui, tr):
     gui.InputInt('pw_wav_g1', "Gap1  ", carDi['pw_wav_g1'])
     gui.SameLine()
     gui.InputInt('pw_wav_g2', "Gap2 ", carDi['pw_wav_g2'])
-    #gui.SameLine()
+    # 改行
     gui.InputInt('pw_wav_sl1', "SL1  ", carDi['pw_wav_sl1'])
     gui.SameLine()
     gui.InputInt('pw_wav_sl2', "SL2  ", carDi['pw_wav_sl2'])
